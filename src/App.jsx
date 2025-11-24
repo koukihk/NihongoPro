@@ -4,7 +4,7 @@ import {
   Volume2, Globe, Edit3, X, Zap, Trophy,
   Sparkles, Heart, CheckCircle, Star as StarIcon,
   Sun, Moon, Wifi, WifiOff, CloudLightning, PenLine, Palette, History, Clock, Github, Quote, ArrowRight,
-  Languages
+  Languages, Target
 } from 'lucide-react';
 import * as jaData from './data/ja';
 import * as koData from './data/ko';
@@ -21,7 +21,6 @@ const DATA = {
  * =====================================================================
  */
 
-// Data removed - imported from src/data/
 
 const LEVELS = [0, 100, 300, 600, 1000, 2000, 4000, 8000];
 
@@ -410,7 +409,40 @@ const KanaView = ({ t, openCanvas, data, targetLang }) => {
  */
 
 
-const ProfileView = ({ t, isZh, toggleLang, user, updateUser, resetData, theme, toggleTheme, onlineMode, toggleOnlineMode, logs, targetLang, setTargetLang }) => {
+const DailyGoalsCard = ({ t, goals, onClaim }) => {
+  if (!goals) return null;
+  return (
+    <GlassCard className="w-full mb-6 !p-5 !bg-white/60 dark:!bg-gray-800/60 border-2 border-white/50 dark:border-white/5">
+      <h3 className="text-lg font-black text-gray-800 dark:text-white mb-4 flex items-center">
+        <Target size={20} className="mr-2 text-red-500" /> {t.dailyGoalsTitle}
+      </h3>
+      <div className="space-y-3">
+        {goals.map(g => (
+          <div key={g.id} className="flex items-center justify-between bg-white/40 dark:bg-black/20 p-3 rounded-xl">
+            <div className="flex-1">
+              <div className="flex justify-between text-xs font-bold text-gray-600 dark:text-gray-300 mb-1">
+                <span>{t[`goal${g.id.charAt(0).toUpperCase() + g.id.slice(1)}`]}</span>
+                <span>{g.current}/{g.target}</span>
+              </div>
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${(g.current / g.target) * 100}%` }}></div>
+              </div>
+            </div>
+            <button
+              onClick={() => onClaim(g.id)}
+              disabled={!g.completed || g.claimed}
+              className={`ml-3 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${g.claimed ? 'bg-gray-200 text-gray-400' : g.completed ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 animate-pulse' : 'bg-gray-100 text-gray-400'}`}
+            >
+              {g.claimed ? t.claimed : t.claim}
+            </button>
+          </div>
+        ))}
+      </div>
+    </GlassCard>
+  );
+};
+
+const ProfileView = ({ t, isZh, toggleLang, user, updateUser, resetData, theme, toggleTheme, onlineMode, toggleOnlineMode, logs, targetLang, setTargetLang, claimGoal }) => {
   const { level, progress, nextXp } = getLevelInfo(user.xp);
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -461,12 +493,15 @@ const ProfileView = ({ t, isZh, toggleLang, user, updateUser, resetData, theme, 
               {AVATARS.map(a => (<button key={a.id} onClick={() => { updateUser({ ...user, avatarId: a.id }); setIsEditingAvatar(false); }} className={`p-2 rounded-2xl flex justify-center hover:bg-white/50 dark:hover:bg-white/10 transition-colors ${user.avatarId === a.id ? 'bg-white dark:bg-white/20 shadow-md ring-2 ring-blue-400' : ''}`}><span className="text-3xl">{a.icon}</span></button>))}
             </div>
           )}
-          <div className="flex w-full px-2 space-x-4 z-10 max-w-md">
+          <div className="flex w-full px-2 space-x-4 z-10">
             <div className="flex-1 bg-orange-50/60 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 p-4 rounded-3xl flex flex-col items-center hover:scale-105 transition-transform"><Zap size={24} className="text-orange-500 mb-2 filter drop-shadow-sm" fill="currentColor" /><span className="text-2xl font-black text-gray-800 dark:text-white">{user.streak}</span><span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t.days}</span></div>
             <div className="flex-1 bg-purple-50/60 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-900/30 p-4 rounded-3xl flex flex-col items-center hover:scale-105 transition-transform"><Trophy size={24} className="text-purple-500 mb-2 filter drop-shadow-sm" fill="currentColor" /><span className="text-2xl font-black text-gray-800 dark:text-white">{user.xp}</span><span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{t.xp}</span></div>
           </div>
           <div className="w-full mt-8 px-8 z-10">
             <div className="h-3 bg-gray-200/60 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 rounded-full transition-all duration-1000 shadow-[0_2px_10px_rgba(99,102,241,0.5)]" style={{ width: `${progress}%` }}></div></div>
+          </div>
+          <div className="w-full px-6 mt-8 z-10">
+            <DailyGoalsCard t={t} goals={user.dailyGoals?.goals} onClaim={claimGoal} />
           </div>
         </GlassCard>
       </div>
@@ -498,7 +533,7 @@ const ProfileView = ({ t, isZh, toggleLang, user, updateUser, resetData, theme, 
   )
 };
 
-const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases }) => {
+const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, addMistake, updateGoal }) => {
   // ... (QuizView hooks remain the same, fixed useEffect logic)
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -543,10 +578,11 @@ const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases }
       points = 20 + (combo * 5); setScore(s => s + points); scoreRef.current += points; setCombo(c => c + 1); speak(questions[currentIndex].answer.kana || questions[currentIndex].answer.ja);
     } else {
       setCombo(0); if (navigator.vibrate) navigator.vibrate(200);
+      addMistake(questions[currentIndex].answer.id);
     }
     setTimeout(() => {
-      if (currentIndex < questions.length - 1) { setCurrentIndex(c => c + 1); setSelectedOption(null); setIsCorrect(null); } else { setIsCompleted(true); }
-    }, 1500);
+      if (currentIndex < questions.length - 1) { setCurrentIndex(c => c + 1); setSelectedOption(null); setIsCorrect(null); } else { setIsCompleted(true); updateGoal('quiz'); }
+    }, 1000);
   };
 
   if (questions.length === 0) return <div className="flex items-center justify-center h-full"><CloudLightning className="animate-bounce text-blue-300" /></div>;
@@ -604,13 +640,17 @@ const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases }
   )
 };
 
-const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFinish }) => {
+const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFinish, updateGoal }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const shuffledList = useMemo(() => shuffleArray(vocabList), [vocabList]);
   const currentCard = shuffledList[currentIndex];
   const isFav = userFavorites.includes(currentCard?.id);
-  const handleNext = () => { setIsFlipped(false); setTimeout(() => { if (currentIndex < shuffledList.length - 1) setCurrentIndex(p => p + 1); else onFinish(); }, 200); };
+  const handleNext = () => {
+    setIsFlipped(false);
+    updateGoal('words', 1);
+    setTimeout(() => { if (currentIndex < shuffledList.length - 1) setCurrentIndex(p => p + 1); else onFinish(); }, 200);
+  };
   if (!currentCard) return null;
   return (
     <div className="flex flex-col items-center h-[85vh] pb-20 animate-fade-in relative px-2">
@@ -638,7 +678,70 @@ const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFi
   );
 };
 
-const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog }) => {
+
+const MistakeView = ({ t, isZh, vocabList, userMistakes, removeMistake, onFinish }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const mistakeList = useMemo(() => vocabList.filter(v => userMistakes.includes(v.id)), [vocabList, userMistakes]);
+  const currentCard = mistakeList[currentIndex];
+
+  const handleNext = () => {
+    setIsFlipped(false);
+    setTimeout(() => {
+      if (currentIndex < mistakeList.length - 1) setCurrentIndex(p => p + 1);
+      else onFinish();
+    }, 200);
+  };
+
+  const handleMastered = () => {
+    removeMistake(currentCard.id);
+    if (mistakeList.length === 1) {
+      onFinish();
+    } else if (currentIndex >= mistakeList.length - 1) {
+      setCurrentIndex(0);
+    }
+  };
+
+  if (!currentCard) return (
+    <div className="flex flex-col items-center justify-center h-full animate-fade-in text-center p-8">
+      <Sparkles size={64} className="text-yellow-400 mb-4 animate-bounce" />
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t.mistakeEmpty}</h2>
+      <button onClick={onFinish} className="mt-8 px-8 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors">{t.close}</button>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col items-center h-[85vh] pb-20 animate-fade-in relative px-2">
+      <div className="w-full flex justify-between items-center mb-6">
+        <button onClick={onFinish} className="p-2 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors"><X size={24} className="text-gray-600 dark:text-gray-300" /></button>
+        <div className="text-sm font-bold bg-red-100 dark:bg-red-900/30 px-3 py-1 rounded-full text-red-600 dark:text-red-300 shadow-sm">{mistakeList.length} {t.mistakeTitle}</div><div className="w-10"></div>
+      </div>
+      <div className="relative w-full max-w-sm flex-1 max-h-[500px] perspective-1000 group z-10">
+        <div onClick={() => setIsFlipped(!isFlipped)} className={`w-full h-full relative preserve-3d transition-transform duration-500 cubic-bezier(0.175, 0.885, 0.32, 1.275) cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}>
+          <GlassCard className="absolute inset-0 backface-hidden flex flex-col !rounded-[2.5rem] !bg-white/80 dark:!bg-gray-800/80 border-red-200 dark:border-red-900/50" shine={true}>
+            <div className="flex justify-between items-start mb-4" onClick={e => e.stopPropagation()}>
+              <span className="px-3 py-1 bg-red-100/50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-full text-xs font-bold uppercase tracking-wider">Mistake</span>
+              <button onClick={() => speak(currentCard.kana || currentCard.ja)} className="p-2.5 bg-white/50 dark:bg-gray-700/50 rounded-full text-blue-500 dark:text-blue-300 hover:scale-110 transition-transform shadow-sm"><Volume2 size={20} /></button>
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center space-y-4"><h2 className="text-5xl sm:text-6xl font-medium text-gray-800 dark:text-white text-center break-keep leading-tight px-2">{currentCard.ja}</h2><p className="text-xl text-gray-400 dark:text-gray-500 font-medium tracking-wide">{currentCard.ro}</p></div>
+            <div className="mt-4 text-blue-400 text-sm font-bold flex items-center justify-center animate-bounce-slow opacity-80"><RotateCcw size={14} className="mr-1.5" /> {t.flip}</div>
+          </GlassCard>
+          <GlassCard className="absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center !rounded-[2.5rem] !bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-red-900/80 dark:to-orange-900/80 border border-red-100 dark:border-red-800"><span className="text-xs font-black text-red-400 dark:text-red-200 bg-white/60 dark:bg-black/20 px-4 py-1.5 rounded-full mb-8 uppercase tracking-widest shadow-sm">{t.meaning}</span><h2 className="text-4xl font-bold text-gray-800 dark:text-white text-center px-4 leading-relaxed">{isZh ? currentCard.zh : currentCard.en}</h2></GlassCard>
+        </div>
+      </div>
+      <div className="mt-8 w-full max-w-xs flex gap-4">
+        <button onClick={handleMastered} className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-green-500/20 active:scale-95 transition-all flex items-center justify-center">
+          <CheckCircle size={20} className="mr-2" /> {t.mastered}
+        </button>
+        <button onClick={handleNext} className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg shadow-xl shadow-gray-900/20 dark:shadow-white/10 active:scale-95 transition-all flex items-center justify-center">
+          {t.keepPracticing} <ChevronRight size={20} className="ml-1" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake, updateGoal }) => {
   const [cards, setCards] = useState([]);
   const [selected, setSelected] = useState([]);
   const [matched, setMatched] = useState([]);
@@ -667,10 +770,15 @@ const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog }) => {
           addXp(15);
           if (newMatched.length === cards.length / 2) {
             addLog('matching', 'Matching Practice', 100); // Log success
+            updateGoal('matching');
             setTimeout(onFinish, 1000);
           }
         }, 400);
-      } else { setTimeout(() => { setSelected([]); setIsChecking(false); }, 800); }
+      } else {
+        setTimeout(() => { setSelected([]); setIsChecking(false); }, 800);
+        addMistake(newSelected[0].vocabId);
+        addMistake(newSelected[1].vocabId);
+      }
     }
   };
   return (
@@ -754,9 +862,31 @@ export default function App() {
         const yest = new Date(); yest.setDate(yest.getDate() - 1);
         parsed.streak = parsed.lastLogin === yest.toDateString() ? parsed.streak + 1 : 1;
         parsed.lastLogin = today;
+        // Reset Daily Goals
+        parsed.dailyGoals = {
+          date: today,
+          goals: [
+            { id: 'quiz', target: 1, current: 0, completed: false },
+            { id: 'matching', target: 1, current: 0, completed: false },
+            { id: 'words', target: 5, current: 0, completed: false }
+          ]
+        };
         saveUser(parsed);
       } else {
-        setUser(parsed);
+        // Ensure dailyGoals exists for existing users
+        if (!parsed.dailyGoals || parsed.dailyGoals.date !== today) {
+          parsed.dailyGoals = {
+            date: today,
+            goals: [
+              { id: 'quiz', target: 1, current: 0, completed: false },
+              { id: 'matching', target: 1, current: 0, completed: false },
+              { id: 'words', target: 5, current: 0, completed: false }
+            ]
+          };
+          saveUser(parsed);
+        } else {
+          setUser(parsed);
+        }
       }
     } else {
       setUser('NEW');
@@ -780,11 +910,50 @@ export default function App() {
   }
 
   const saveUser = (u) => { setUser(u); localStorage.setItem('kawaii_user_v1', JSON.stringify(u)); };
-  const handleUserInit = (name, avatarId) => saveUser({ name, avatarId, xp: 0, streak: 1, lastLogin: new Date().toDateString(), favorites: [] });
+  const handleUserInit = (name, avatarId) => saveUser({
+    name, avatarId, xp: 0, streak: 1, lastLogin: new Date().toDateString(), favorites: [], mistakes: [],
+    dailyGoals: {
+      date: new Date().toDateString(),
+      goals: [
+        { id: 'quiz', target: 1, current: 0, completed: false },
+        { id: 'matching', target: 1, current: 0, completed: false },
+        { id: 'words', target: 5, current: 0, completed: false }
+      ]
+    }
+  });
   const addXp = (amount) => saveUser({ ...user, xp: user.xp + amount });
   const toggleFav = (id) => {
     const favs = user.favorites || [];
     saveUser({ ...user, favorites: favs.includes(id) ? favs.filter(x => x !== id) : [...favs, id] });
+  };
+  const addMistake = (id) => {
+    const mistakes = user.mistakes || [];
+    if (!mistakes.includes(id)) {
+      saveUser({ ...user, mistakes: [...mistakes, id] });
+    }
+  };
+  const removeMistake = (id) => {
+    const mistakes = user.mistakes || [];
+    saveUser({ ...user, mistakes: mistakes.filter(m => m !== id) });
+  };
+  const updateGoal = (type, amount = 1) => {
+    if (!user.dailyGoals) return;
+    const newGoals = user.dailyGoals.goals.map(g => {
+      if (g.id === type && !g.completed) {
+        const newCurrent = Math.min(g.current + amount, g.target);
+        return { ...g, current: newCurrent, completed: newCurrent >= g.target };
+      }
+      return g;
+    });
+    saveUser({ ...user, dailyGoals: { ...user.dailyGoals, goals: newGoals } });
+  };
+  const claimGoalReward = (goalId) => {
+    const newGoals = user.dailyGoals.goals.map(g => {
+      if (g.id === goalId) return { ...g, claimed: true };
+      return g;
+    });
+    saveUser({ ...user, xp: user.xp + 50, dailyGoals: { ...user.dailyGoals, goals: newGoals } });
+    showToast(t.claimed + ' +50 XP');
   };
   const resetData = () => { localStorage.removeItem('kawaii_user_v1'); localStorage.removeItem('kawaii_study_logs'); setUser('NEW'); setActiveTab('kana'); setPracticeMode(null); setLogs([]); };
 
@@ -861,17 +1030,27 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+                {(user.mistakes?.length > 0) && (
+                  <div onClick={() => setPracticeMode('mistake')} className="bg-red-50/60 dark:bg-red-900/20 backdrop-blur-xl p-6 rounded-[2rem] border border-red-100 dark:border-red-800 cursor-pointer flex items-center justify-between hover:bg-red-100/80 dark:hover:bg-red-900/30 transition-colors mb-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-red-200 dark:bg-red-800 text-red-600 dark:text-red-200 rounded-full"><X size={24} /></div>
+                      <div><h3 className="font-bold text-red-900 dark:text-red-100 text-lg">{t.mistakeTitle}</h3><p className="text-xs text-red-600 dark:text-red-300 font-bold">{user.mistakes.length} words</p></div>
+                    </div>
+                    <ChevronRight className="text-red-300" />
+                  </div>
+                )}
                 {(user.favorites?.length > 0) && (<div onClick={() => { setPracticeMode('flashcards'); setFilterFavs(true); }} className="bg-pink-50/60 dark:bg-pink-900/20 backdrop-blur-xl p-6 rounded-[2rem] border border-pink-100 dark:border-pink-800 cursor-pointer flex items-center justify-between hover:bg-pink-100/80 dark:hover:bg-pink-900/30 transition-colors mt-4"><div className="flex items-center space-x-4"><div className="p-3 bg-pink-200 dark:bg-pink-800 text-pink-600 dark:text-pink-200 rounded-full"><Heart fill="currentColor" size={24} /></div><div><h3 className="font-bold text-pink-900 dark:text-pink-100 text-lg">{t.onlyFavorites}</h3><p className="text-xs text-pink-600 dark:text-pink-300 font-bold">{user.favorites.length} words</p></div></div><ChevronRight className="text-pink-300" /></div>)}
               </div>
             )}
-            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { setLang(l => l === 'zh' ? 'en' : 'zh'); localStorage.setItem('kawaii_lang', l === 'zh' ? 'en' : 'zh') }} user={user} updateUser={saveUser} resetData={resetData} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} />}
+            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { setLang(l => l === 'zh' ? 'en' : 'zh'); localStorage.setItem('kawaii_lang', l === 'zh' ? 'en' : 'zh') }} user={user} updateUser={saveUser} resetData={resetData} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} claimGoal={claimGoalReward} />}
           </div>
         )}
         {practiceMode && (
           <div className="h-full">
-            {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} />}
-            {practiceMode === 'matching' && <MatchingGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); addXp(20); }} addLog={addLog} />}
-            {practiceMode === 'quiz' && <QuizView t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} praisePhrases={DATA[targetLang].PRAISE_PHRASES} />}
+            {practiceMode === 'mistake' && <MistakeView t={t} isZh={isZh} vocabList={currentVocabList} userMistakes={user.mistakes || []} removeMistake={removeMistake} onFinish={() => setPracticeMode(null)} />}
+            {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} updateGoal={updateGoal} />}
+            {practiceMode === 'matching' && <MatchingGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); addXp(20); }} addLog={addLog} addMistake={addMistake} updateGoal={updateGoal} />}
+            {practiceMode === 'quiz' && <QuizView t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} praisePhrases={DATA[targetLang].PRAISE_PHRASES} addMistake={addMistake} updateGoal={updateGoal} />}
           </div>
         )}
       </main>
@@ -905,6 +1084,6 @@ export default function App() {
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-    </div>
+    </div >
   );
 }
