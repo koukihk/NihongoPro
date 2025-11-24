@@ -4,7 +4,7 @@ import {
   Volume2, Globe, Edit3, X, Zap, Trophy,
   Sparkles, Heart, CheckCircle, Star as StarIcon,
   Sun, Moon, Wifi, WifiOff, CloudLightning, PenLine, Palette, History, Clock, Github, Quote, ArrowRight,
-  Languages, Target
+  Languages, Target, Download, Share2
 } from 'lucide-react';
 import * as jaData from './data/ja';
 import * as koData from './data/ko';
@@ -61,13 +61,20 @@ const useFavicon = (emoji) => {
   }, [emoji]);
 };
 
-const speak = (text) => {
+const speak = (text, langOverride = null) => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ja-JP'; // TODO: Dynamic lang
+      const targetLangCode = langOverride || (window.__appTargetLang || 'ja');
+      utterance.lang = targetLangCode === 'ko' ? 'ko-KR' : 'ja-JP';
       utterance.rate = 0.9;
+      
+      // Try to find a voice that matches the language
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v => v.lang.startsWith(targetLangCode === 'ko' ? 'ko' : 'ja'));
+      if (preferredVoice) utterance.voice = preferredVoice;
+      
       window.speechSynthesis.speak(utterance);
     }, 10);
   }
@@ -210,25 +217,45 @@ const SectionHeader = ({ title, subtitle, targetLang }) => {
  * =====================================================================
  */
 
-const HistoryModal = ({ logs, onClose, t }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-md animate-fade-in transition-opacity" onClick={onClose}></div>
-    <div className="w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-[2.5rem] p-6 relative z-10 shadow-2xl animate-scale-up border border-white/30 dark:border-white/10 ring-1 ring-white/20 dark:ring-white/5 max-h-[70vh] flex flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-black text-gray-800 dark:text-white flex items-center">
-          <History size={24} className="mr-2 text-blue-500" /> {t.historyTitle}
-        </h3>
-        <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
-      </div>
+const HistoryModal = ({ logs, onClose, t }) => {
+  const [typeFilter, setTypeFilter] = useState('all');
+  
+  const filteredLogs = useMemo(() => {
+    if (typeFilter === 'all') return logs;
+    return logs.filter(log => log.type === typeFilter);
+  }, [logs, typeFilter]);
 
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-3">
-        {logs.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 dark:text-gray-500">
-            <CloudLightning size={48} className="mx-auto mb-2 opacity-20" />
-            <p>{t.historyEmpty}</p>
-          </div>
-        ) : (
-          logs.map((log, idx) => (
+  const groupedLogs = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const groups = { today: [], week: [], older: [] };
+    filteredLogs.forEach(log => {
+      const logDate = new Date(log.date);
+      const logDay = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate());
+      if (logDay >= today) groups.today.push(log);
+      else if (logDay >= weekAgo) groups.week.push(log);
+      else groups.older.push(log);
+    });
+    return groups;
+  }, [filteredLogs]);
+
+  const typeButtons = [
+    { key: 'all', label: t.historyFilterAll },
+    { key: 'quiz', label: t.historyFilterQuiz },
+    { key: 'matching', label: t.historyFilterMatching },
+    { key: 'writing', label: t.historyFilterWriting }
+  ];
+
+  const renderGroup = (title, groupLogs) => {
+    if (groupLogs.length === 0) return null;
+    return (
+      <div key={title} className="mb-4">
+        <h4 className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 px-1">{title} ({groupLogs.length})</h4>
+        <div className="space-y-2">
+          {groupLogs.map((log, idx) => (
             <div key={idx} className="flex items-center p-3 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/40 dark:border-white/5">
               <div className={`p-3 rounded-xl mr-3 ${log.type === 'quiz' ? 'bg-purple-100 text-purple-600' : log.type === 'matching' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
                 {log.type === 'quiz' ? <Trophy size={18} /> : log.type === 'matching' ? <Gamepad2 size={18} /> : <Edit3 size={18} />}
@@ -246,12 +273,57 @@ const HistoryModal = ({ logs, onClose, t }) => (
                 <span>{formatDate(log.date)}</span>
               </div>
             </div>
-          ))
-        )}
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-md animate-fade-in transition-opacity" onClick={onClose}></div>
+      <div className="w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-[2.5rem] p-6 relative z-10 shadow-2xl animate-scale-up border border-white/30 dark:border-white/10 ring-1 ring-white/20 dark:ring-white/5 max-h-[75vh] flex flex-col">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-black text-gray-800 dark:text-white flex items-center">
+            <History size={24} className="mr-2 text-blue-500" /> {t.historyTitle}
+          </h3>
+          <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
+        </div>
+
+        <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
+          {typeButtons.map(btn => (
+            <button
+              key={btn.key}
+              onClick={() => setTypeFilter(btn.key)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                typeFilter === btn.key
+                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                  : 'bg-white/60 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-white/20'
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+          {filteredLogs.length === 0 ? (
+            <div className="text-center py-10 text-gray-400 dark:text-gray-500">
+              <CloudLightning size={48} className="mx-auto mb-2 opacity-20" />
+              <p>{t.historyEmpty}</p>
+            </div>
+          ) : (
+            <>
+              {renderGroup(t.historyGroupToday, groupedLogs.today)}
+              {renderGroup(t.historyGroupWeek, groupedLogs.week)}
+              {renderGroup(t.historyGroupOlder, groupedLogs.older)}
+            </>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ConfirmModal = ({ title, description, confirmLabel, cancelLabel, onConfirm, onCancel }) => {
   const [isEntering, setIsEntering] = useState(false);
@@ -286,10 +358,11 @@ const ConfirmModal = ({ title, description, confirmLabel, cancelLabel, onConfirm
   );
 };
 
-const KanaCanvasModal = ({ char, onClose, t, addLog }) => {
+const KanaCanvasModal = ({ char, onClose, t, addLog, notify }) => {
   const canvasRef = useRef(null);
   const [brushColor, setBrushColor] = useState('#3B82F6');
   const [brushSize, setBrushSize] = useState(8);
+  const [isSharing, setIsSharing] = useState(false);
   const hasDrawn = useRef(false);
 
   const BRUSH_COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#374151'];
@@ -351,6 +424,52 @@ const KanaCanvasModal = ({ char, onClose, t, addLog }) => {
   }
   const clear = () => canvasRef.current.getContext('2d').clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
+  const saveImage = () => {
+    if (!canvasRef.current) return;
+    const link = document.createElement('a');
+    link.href = canvasRef.current.toDataURL('image/png');
+    link.download = `${char.char || 'kana'}-${Date.now()}.png`;
+    link.click();
+    notify?.(t.toastSaved || 'Saved');
+  };
+
+  const getCanvasBlob = () => new Promise((resolve, reject) => {
+    if (!canvasRef.current) return reject(new Error('no-canvas'));
+    canvasRef.current.toBlob(blob => {
+      if (blob) resolve(blob);
+      else reject(new Error('blob-null'));
+    }, 'image/png');
+  });
+
+  const shareImage = async () => {
+    if (!canvasRef.current) return;
+    setIsSharing(true);
+    try {
+      const blob = await getCanvasBlob();
+      const file = new File([blob], `${char.char || 'kana'}-practice.png`, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: t.drawTitle,
+          text: `${char.label}: ${char.char}`
+        });
+        notify?.(t.toastShareSuccess || 'Shared');
+      } else if (navigator.clipboard?.writeText) {
+        const dataUrl = canvasRef.current.toDataURL('image/png');
+        await navigator.clipboard.writeText(dataUrl);
+        notify?.(t.toastShareCopied || 'Copied');
+      } else {
+        saveImage();
+        notify?.(t.toastShareFail || 'Saved instead');
+      }
+    } catch (error) {
+      console.error(error);
+      notify?.(t.toastShareFail || 'Sharing unavailable');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={handleClose}>
       <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-up" onClick={e => e.stopPropagation()}>
@@ -374,7 +493,7 @@ const KanaCanvasModal = ({ char, onClose, t, addLog }) => {
           />
         </div>
 
-        <div className="flex flex-col space-y-3 mb-6 p-3 bg-gray-50 dark:bg-black/20 rounded-2xl">
+        <div className="flex flex-col space-y-3 mb-4 p-3 bg-gray-50 dark:bg-black/20 rounded-2xl">
           <div className="flex justify-between items-center">
             <span className="text-xs font-bold text-gray-400 dark:text-gray-500 mr-2 flex items-center"><Palette size={14} className="mr-1" /> {t.brushColor}</span>
             <div className="flex space-x-2">
@@ -389,9 +508,18 @@ const KanaCanvasModal = ({ char, onClose, t, addLog }) => {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 w-16">{t.brushSize}</span>
+            <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 w-12 whitespace-nowrap">{t.brushSize}</span>
             <input type="range" min="2" max="20" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-500" />
           </div>
+        </div>
+
+        <div className="flex gap-4 px-4 pb-2">
+          <button onClick={saveImage} className="flex-1 py-3 rounded-[1.5rem] bg-white/85 dark:bg-gray-900/40 backdrop-blur-xl font-bold text-gray-700 dark:text-gray-100 border border-white/70 dark:border-white/15 shadow-[0_10px_25px_rgba(15,23,42,0.08)] hover:bg-white dark:hover:bg-gray-800 transition-all flex items-center justify-center">
+            <Download size={18} className="mr-2" /> {t.saveImage}
+          </button>
+          <button onClick={shareImage} disabled={isSharing} className={`flex-1 py-3 rounded-[1.5rem] font-bold text-white border border-white/40 dark:border-white/10 shadow-[0_18px_40px_rgba(59,130,246,0.35)] transition-all flex items-center justify-center active:scale-95 ${isSharing ? 'opacity-60 cursor-not-allowed' : 'hover:from-blue-600 hover:to-purple-500'}`} style={{ backgroundImage: 'linear-gradient(90deg, rgba(14,165,233,0.9), rgba(139,92,246,0.9))' }}>
+            <Share2 size={18} className="mr-2" /> {isSharing ? (t.shareWorking || '...') : t.shareImage}
+          </button>
         </div>
 
         <div className="flex gap-4 px-4 pb-4 pt-1">
@@ -434,12 +562,6 @@ const KanaView = ({ t, openCanvas, data, targetLang }) => {
     </div>
   );
 };
-
-/**
- * =====================================================================
- * 5. 伴学宠物 (COMPANION PET)
- * =====================================================================
- */
 
 
 const DailyGoalsCard = ({ t, goals, onClaim }) => {
@@ -583,7 +705,6 @@ const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, 
   const [isCompleted, setIsCompleted] = useState(false);
   const scoreRef = useRef(0);
 
-  // 关键修复：正确使用 useEffect 初始化题目，防止白屏
   useEffect(() => {
     if (!vocabList || vocabList.length === 0) return;
     const qList = [];
@@ -599,7 +720,6 @@ const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, 
     setQuestions(qList);
   }, [vocabList]);
 
-  // 关键修复：将播放表扬语音的 useEffect 移到顶层
   useEffect(() => {
     if (isCompleted) {
       const phrase = praisePhrases[Math.floor(Math.random() * praisePhrases.length)];
@@ -877,6 +997,11 @@ export default function App() {
     return onlineMode ? [...base, ...cloud] : base;
   }, [onlineMode, targetLang]);
 
+  // Sync target language globally for speech synthesis
+  useEffect(() => {
+    window.__appTargetLang = targetLang;
+  }, [targetLang]);
+
   useEffect(() => {
     const savedUser = localStorage.getItem('kawaii_user_v1');
     const savedLang = localStorage.getItem('kawaii_lang');
@@ -1037,7 +1162,7 @@ export default function App() {
         </div>
       )}
       {user === 'NEW' && <Onboarding t={t} onComplete={handleUserInit} />}
-      {drawingChar && <KanaCanvasModal char={drawingChar} onClose={() => setDrawingChar(null)} t={t} addLog={addLog} />}
+      {drawingChar && <KanaCanvasModal char={drawingChar} onClose={() => setDrawingChar(null)} t={t} addLog={addLog} notify={showToast} />}
       {showResetModal && (
         <ConfirmModal
           title={t.resetData}
