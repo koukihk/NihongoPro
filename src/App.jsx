@@ -253,6 +253,39 @@ const HistoryModal = ({ logs, onClose, t }) => (
   </div>
 );
 
+const ConfirmModal = ({ title, description, confirmLabel, cancelLabel, onConfirm, onCancel }) => {
+  const [isEntering, setIsEntering] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setIsEntering(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-400 ${isEntering ? 'opacity-100' : 'opacity-0'}`}
+        onClick={onCancel}
+      ></div>
+      <div className={`relative w-full max-w-sm bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl rounded-[2rem] p-6 shadow-2xl border border-white/60 dark:border-white/10 ring-1 ring-white/40 dark:ring-white/5 transition-all duration-500 ${isEntering ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-black text-gray-800 dark:text-white">{title}</h3>
+          <button onClick={onCancel} className="p-2 rounded-full hover:bg-white/60 dark:hover:bg-gray-800 transition-colors"><X size={20} className="text-gray-400" /></button>
+        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-300 leading-relaxed">{description}</p>
+        <div className="flex justify-end gap-3 mt-8">
+          <button onClick={onCancel} className="px-4 py-2 rounded-xl font-bold text-gray-500 dark:text-gray-300 bg-white/70 dark:bg-gray-800/50 border border-white/60 dark:border-white/10 backdrop-blur-xl">
+            {cancelLabel}
+          </button>
+          <button onClick={onConfirm} className="px-5 py-2 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-pink-500 shadow-lg shadow-red-500/30">
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const KanaCanvasModal = ({ char, onClose, t, addLog }) => {
   const canvasRef = useRef(null);
   const [brushColor, setBrushColor] = useState('#3B82F6');
@@ -361,11 +394,11 @@ const KanaCanvasModal = ({ char, onClose, t, addLog }) => {
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <button onClick={clear} className="flex-1 py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center">
+        <div className="flex gap-4 px-4 pb-4 pt-1">
+          <button onClick={clear} className="flex-1 py-4 rounded-[1.75rem] bg-white/70 dark:bg-gray-900/40 backdrop-blur-xl font-bold text-gray-700 dark:text-gray-100 border border-white/60 dark:border-white/15 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all flex items-center justify-center">
             <RotateCcw size={20} className="mr-2" /> {t.clear}
           </button>
-          <button onClick={() => speak(char)} className="flex-1 py-4 rounded-2xl bg-blue-500 font-bold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-colors flex items-center justify-center active:scale-95">
+          <button onClick={() => speak(char.char)} className="flex-1 py-4 rounded-[1.75rem] bg-gradient-to-r from-blue-500/90 to-indigo-500/90 font-bold text-white border border-white/40 dark:border-white/10 shadow-[0_18px_40px_rgba(59,130,246,0.35)] hover:from-blue-500 hover:to-indigo-500 transition-all flex items-center justify-center active:scale-95">
             <Volume2 size={20} className="mr-2" /> Play
           </button>
         </div>
@@ -442,7 +475,7 @@ const DailyGoalsCard = ({ t, goals, onClaim }) => {
   );
 };
 
-const ProfileView = ({ t, isZh, toggleLang, user, updateUser, resetData, theme, toggleTheme, onlineMode, toggleOnlineMode, logs, targetLang, setTargetLang, claimGoal }) => {
+const ProfileView = ({ t, isZh, toggleLang, user, updateUser, theme, toggleTheme, onlineMode, toggleOnlineMode, logs, targetLang, setTargetLang, claimGoal, onResetRequest }) => {
   const { level, progress, nextXp } = getLevelInfo(user.xp);
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -523,7 +556,7 @@ const ProfileView = ({ t, isZh, toggleLang, user, updateUser, resetData, theme, 
         </button>
       </div>
       <div className="px-4 flex flex-col gap-4">
-        <button onClick={() => { if (window.confirm(t.resetConfirm)) resetData(); }} className="w-full flex items-center justify-center p-5 bg-red-50/50 dark:bg-red-900/20 rounded-3xl hover:bg-red-100/80 dark:hover:bg-red-900/40 transition-all border border-red-100 dark:border-red-900/30 backdrop-blur-md group active:scale-[0.98]"><RotateCcw size={20} className="mr-2 text-red-500 dark:text-red-400 group-hover:-rotate-180 transition-transform duration-500" /><span className="font-bold text-red-500 dark:text-red-400">{t.resetData}</span></button>
+        <button onClick={onResetRequest} className="w-full flex items-center justify-center p-5 bg-red-50/50 dark:bg-red-900/20 rounded-3xl hover:bg-red-100/80 dark:hover:bg-red-900/40 transition-all border border-red-100 dark:border-red-900/30 backdrop-blur-md group active:scale-[0.98]"><RotateCcw size={20} className="mr-2 text-red-500 dark:text-red-400 group-hover:-rotate-180 transition-transform duration-500" /><span className="font-bold text-red-500 dark:text-red-400">{t.resetData}</span></button>
 
         <a href="https://github.com/koukihk" target="_blank" rel="noreferrer" className="mx-auto inline-flex items-center justify-center px-4 py-2 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 transition-all cursor-pointer mb-4">
           <Github size={14} className="mr-2" /> {t.developer}: koukihk
@@ -827,6 +860,7 @@ export default function App() {
   const [onlineMode, setOnlineMode] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [logs, setLogs] = useState([]);
+  const [showResetModal, setShowResetModal] = useState(false);
 
   const t = TRANSLATIONS[lang];
   const isZh = lang === 'zh';
@@ -998,6 +1032,19 @@ export default function App() {
       )}
       {user === 'NEW' && <Onboarding t={t} onComplete={handleUserInit} />}
       {drawingChar && <KanaCanvasModal char={drawingChar} onClose={() => setDrawingChar(null)} t={t} addLog={addLog} />}
+      {showResetModal && (
+        <ConfirmModal
+          title={t.resetData}
+          description={t.resetConfirm}
+          confirmLabel={t.resetData}
+          cancelLabel={t.cancel}
+          onCancel={() => setShowResetModal(false)}
+          onConfirm={() => {
+            resetData();
+            setShowResetModal(false);
+          }}
+        />
+      )}
       <div className="fixed inset-0 -z-10 transition-opacity duration-700">
         <div className={`absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,_#dbeafe_0%,_transparent_50%),radial-gradient(circle_at_90%_60%,_#fce7f3_0%,_transparent_40%),radial-gradient(circle_at_10%_60%,_#ede9fe_0%,_transparent_40%)] opacity-80 animate-pulse-slow ${theme === 'dark' ? 'opacity-0' : 'opacity-80'}`}></div>
         <div className={`absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#1e293b_0%,_#0f172a_100%)] ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}></div>
@@ -1042,7 +1089,7 @@ export default function App() {
                 {(user.favorites?.length > 0) && (<div onClick={() => { setPracticeMode('flashcards'); setFilterFavs(true); }} className="bg-pink-50/60 dark:bg-pink-900/20 backdrop-blur-xl p-6 rounded-[2rem] border border-pink-100 dark:border-pink-800 cursor-pointer flex items-center justify-between hover:bg-pink-100/80 dark:hover:bg-pink-900/30 transition-colors mt-4"><div className="flex items-center space-x-4"><div className="p-3 bg-pink-200 dark:bg-pink-800 text-pink-600 dark:text-pink-200 rounded-full"><Heart fill="currentColor" size={24} /></div><div><h3 className="font-bold text-pink-900 dark:text-pink-100 text-lg">{t.onlyFavorites}</h3><p className="text-xs text-pink-600 dark:text-pink-300 font-bold">{user.favorites.length} words</p></div></div><ChevronRight className="text-pink-300" /></div>)}
               </div>
             )}
-            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { setLang(l => l === 'zh' ? 'en' : 'zh'); localStorage.setItem('kawaii_lang', l === 'zh' ? 'en' : 'zh') }} user={user} updateUser={saveUser} resetData={resetData} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} claimGoal={claimGoalReward} />}
+            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { setLang(l => l === 'zh' ? 'en' : 'zh'); localStorage.setItem('kawaii_lang', l === 'zh' ? 'en' : 'zh') }} user={user} updateUser={saveUser} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} claimGoal={claimGoalReward} onResetRequest={() => setShowResetModal(true)} />}
           </div>
         )}
         {practiceMode && (
