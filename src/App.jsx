@@ -213,7 +213,7 @@ const SectionHeader = ({ title, subtitle, targetLang }) => {
 const HistoryModal = ({ logs, onClose, t }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-md animate-fade-in transition-opacity" onClick={onClose}></div>
-    <div className="w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-[2.5rem] p-6 relative z-10 shadow-2xl animate-scale-up border border-white/50 ring-1 ring-white/50 max-h-[70vh] flex flex-col">
+    <div className="w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-[2.5rem] p-6 relative z-10 shadow-2xl animate-scale-up border border-white/30 dark:border-white/10 ring-1 ring-white/20 dark:ring-white/5 max-h-[70vh] flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-black text-gray-800 dark:text-white flex items-center">
           <History size={24} className="mr-2 text-blue-500" /> {t.historyTitle}
