@@ -573,11 +573,11 @@ const DailyGoalsCard = ({ t, goals, onClaim }) => {
       </h3>
       <div className="space-y-3">
         {goals.map(g => (
-          <div key={g.id} className="flex items-center justify-between bg-white/40 dark:bg-black/20 p-3 rounded-xl">
-            <div className="flex-1">
+          <div key={g.id} className="flex items-center gap-3 bg-white/40 dark:bg-black/20 p-3 rounded-xl">
+            <div className="flex-1 min-w-0 mr-2">
               <div className="flex justify-between text-xs font-bold text-gray-600 dark:text-gray-300 mb-1">
                 <span>{t[`goal${g.id.charAt(0).toUpperCase() + g.id.slice(1)}`]}</span>
-                <span>{g.current}/{g.target}</span>
+                <span className="ml-2">{g.current}/{g.target}</span>
               </div>
               <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${(g.current / g.target) * 100}%` }}></div>
@@ -586,7 +586,7 @@ const DailyGoalsCard = ({ t, goals, onClaim }) => {
             <button
               onClick={() => onClaim(g.id)}
               disabled={!g.completed || g.claimed}
-              className={`ml-3 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border backdrop-blur-sm ${
+              className={`shrink-0 min-w-[60px] px-4 py-1.5 rounded-xl text-xs font-bold transition-all border backdrop-blur-sm ${
                 g.claimed
                   ? 'bg-gray-200 text-gray-400 border-white/40 dark:bg-gray-800/70 dark:text-gray-500 dark:border-white/10'
                   : g.completed
@@ -616,7 +616,7 @@ const ProfileView = ({ t, isZh, toggleLang, user, updateUser, theme, toggleTheme
   const saveName = () => { if (tempName.trim()) { updateUser({ ...user, name: tempName.trim() }); setIsEditingName(false); } }
 
   return (
-    <div className="space-y-6 pb-32 animate-fade-in max-w-md md:max-w-2xl mx-auto">
+    <div className="space-y-6 pb-32 animate-fade-in max-w-lg md:max-w-2xl mx-auto">
       {showHistory && <HistoryModal logs={logs} t={t} onClose={() => setShowHistory(false)} />}
       <SectionHeader title={t.tabProfile} targetLang={targetLang} />
       <div className="relative px-4 mt-12">
@@ -1182,7 +1182,7 @@ export default function App() {
         <div className={`absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,_#3b82f6_0%,_transparent_40%),radial-gradient(circle_at_80%_50%,_#6366f1_0%,_transparent_40%)] mix-blend-screen opacity-20 ${theme === 'dark' ? 'opacity-30' : 'opacity-0'}`}></div>
       </div>
       <div className="fixed inset-0 -z-10 opacity-[0.04] dark:opacity-[0.07] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
-      <main className={`w-full max-w-md md:max-w-4xl mx-auto h-[100dvh] overflow-y-auto no-scrollbar ${practiceMode ? 'p-4' : 'px-4 pt-10 pb-24'}`}>
+      <main className={`w-full max-w-lg md:max-w-4xl mx-auto h-[100dvh] overflow-y-auto no-scrollbar ${practiceMode ? 'p-4' : 'px-4 pt-10 pb-24'}`}>
         {user !== 'NEW' && !practiceMode && (
           <div className="min-h-full">
             {activeTab === 'kana' && <KanaView t={t} openCanvas={setDrawingChar} data={DATA[targetLang]} targetLang={targetLang} />}
@@ -1233,7 +1233,7 @@ export default function App() {
         )}
       </main>
       {!practiceMode && user !== 'NEW' && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-[320px] md:max-w-lg animate-slide-up">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-[360px] md:max-w-lg animate-slide-up">
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-2xl border border-white/40 dark:border-white/10 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 rounded-[2.5rem] p-2 flex items-center justify-between px-4 md:px-8 ring-1 ring-white/50 dark:ring-white/5">
             <NavItem icon={Grid} label={t[DATA[targetLang].LABELS.tab1Key]} active={activeTab === 'kana'} onClick={() => setActiveTab('kana')} />
             <NavItem icon={Gamepad2} label={t.tabPractice} active={activeTab === 'practice'} onClick={() => setActiveTab('practice')} />
