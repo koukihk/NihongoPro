@@ -464,7 +464,13 @@ const DailyGoalsCard = ({ t, goals, onClaim }) => {
             <button
               onClick={() => onClaim(g.id)}
               disabled={!g.completed || g.claimed}
-              className={`ml-3 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${g.claimed ? 'bg-gray-200 text-gray-400' : g.completed ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 animate-pulse' : 'bg-gray-100 text-gray-400'}`}
+              className={`ml-3 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border backdrop-blur-sm ${
+                g.claimed
+                  ? 'bg-gray-200 text-gray-400 border-white/40 dark:bg-gray-800/70 dark:text-gray-500 dark:border-white/10'
+                  : g.completed
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 animate-pulse border-transparent dark:from-green-400 dark:to-emerald-400 dark:text-gray-900'
+                    : 'bg-white/80 text-gray-500 border-white/60 dark:bg-white/10 dark:text-gray-200 dark:border-white/5'
+              }`}
             >
               {g.claimed ? t.claimed : t.claim}
             </button>
