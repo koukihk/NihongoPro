@@ -1055,25 +1055,23 @@ Format exactly like this (no extra text):
         <button onClick={onAISettingsOpen} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
           <div className="flex items-center space-x-4"><div className="p-3 bg-purple-100/80 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-2xl group-hover:scale-110 transition-transform"><Bot size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.aiMode}</span></div><span className={`text-sm font-bold px-3 py-1 rounded-xl shadow-sm whitespace-nowrap ${aiConfig?.enabled && aiConfig?.apiKey ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500 dark:bg-black/20 dark:text-gray-400'}`}>{aiConfig?.enabled && aiConfig?.apiKey ? t.aiEnabled : t.aiDisabled}</span>
         </button>
-      </div>
-      <div className="px-4 flex flex-col gap-4">
-        {/* 数据备份 */}
-        <div className="flex gap-3">
-          <button onClick={onExportData} className="flex-1 flex items-center justify-center p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl hover:bg-blue-100/80 dark:hover:bg-blue-900/40 transition-all border border-blue-100 dark:border-blue-900/30 backdrop-blur-md group active:scale-[0.98]">
-            <Download size={18} className="mr-2 text-blue-500 dark:text-blue-400" /><span className="font-bold text-blue-600 dark:text-blue-400 text-sm">{t.exportData}</span>
-          </button>
-          <label className="flex-1 flex items-center justify-center p-4 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-2xl hover:bg-indigo-100/80 dark:hover:bg-indigo-900/40 transition-all border border-indigo-100 dark:border-indigo-900/30 backdrop-blur-md group active:scale-[0.98] cursor-pointer">
-            <Upload size={18} className="mr-2 text-indigo-500 dark:text-indigo-400" /><span className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">{t.importData}</span>
-            <input type="file" accept=".zip" onChange={onImportData} className="hidden" />
-          </label>
-        </div>
-
-        <button onClick={onPrivacyOpen} className="w-full flex items-center justify-center p-5 bg-green-50/50 dark:bg-green-900/20 rounded-3xl hover:bg-green-100/80 dark:hover:bg-green-900/40 transition-all border border-green-100 dark:border-green-900/30 backdrop-blur-md group active:scale-[0.98]">
-          <Shield size={20} className="mr-2 text-green-500 dark:text-green-400" /><span className="font-bold text-green-600 dark:text-green-400">{t.privacyPolicy}</span>
+        <button onClick={onExportData} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
+          <div className="flex items-center space-x-4"><div className="p-3 bg-blue-100/80 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform"><Download size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.exportData}</span></div><ChevronRight size={20} className="text-gray-400" />
         </button>
-        <button onClick={onResetRequest} className="w-full flex items-center justify-center p-5 bg-red-50/50 dark:bg-red-900/20 rounded-3xl hover:bg-red-100/80 dark:hover:bg-red-900/40 transition-all border border-red-100 dark:border-red-900/30 backdrop-blur-md group active:scale-[0.98]"><RotateCcw size={20} className="mr-2 text-red-500 dark:text-red-400 group-hover:-rotate-180 transition-transform duration-500" /><span className="font-bold text-red-500 dark:text-red-400">{t.resetData}</span></button>
+        <label className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98] cursor-pointer">
+          <div className="flex items-center space-x-4"><div className="p-3 bg-violet-100/80 dark:bg-violet-900/50 text-violet-600 dark:text-violet-400 rounded-2xl group-hover:scale-110 transition-transform"><Upload size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.importData}</span></div><ChevronRight size={20} className="text-gray-400" />
+          <input type="file" accept=".zip" onChange={onImportData} className="hidden" />
+        </label>
+        <button onClick={onPrivacyOpen} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
+          <div className="flex items-center space-x-4"><div className="p-3 bg-green-100/80 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-2xl group-hover:scale-110 transition-transform"><Shield size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.privacyPolicy}</span></div><ChevronRight size={20} className="text-gray-400" />
+        </button>
+        <button onClick={onResetRequest} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
+          <div className="flex items-center space-x-4"><div className="p-3 bg-red-100/80 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-2xl group-hover:scale-110 group-hover:-rotate-180 transition-all duration-500"><RotateCcw size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.resetData}</span></div><ChevronRight size={20} className="text-gray-400" />
+        </button>
+      </div>
 
-        <a href="https://github.com/koukihk" target="_blank" rel="noreferrer" className="mx-auto inline-flex items-center justify-center px-4 py-2 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 transition-all cursor-pointer mb-4">
+      <div className="flex justify-center mt-4 mb-4">
+        <a href="https://github.com/koukihk" target="_blank" rel="noreferrer" className="inline-flex items-center justify-center px-4 py-2 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm rounded-full text-gray-400 dark:text-gray-500 text-xs font-bold hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 transition-all cursor-pointer">
           <Github size={14} className="mr-2" /> {t.developer}: koukihk
         </a>
       </div>
