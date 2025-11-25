@@ -4,7 +4,7 @@ import {
   Volume2, Globe, Edit3, X, Zap, Trophy,
   Sparkles, Heart, CheckCircle, Star as StarIcon,
   Sun, Moon, Wifi, WifiOff, CloudLightning, PenLine, Palette, History, Clock, Github, Quote, ArrowRight,
-  Languages, Target, Download, Share2, Bot, Settings, Eye, EyeOff, Shield
+  Languages, Target, Download, Share2, Bot, Settings, Eye, EyeOff, Shield, Lightbulb, RefreshCw
 } from 'lucide-react';
 import * as jaData from './data/ja';
 import * as koData from './data/ko';
@@ -437,7 +437,7 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
 
   const handleSave = () => {
     const finalConfig = {
-      enabled: currentApiKey ? true : false, // 有 API Key 就自动启用
+      enabled: config.enabled && currentApiKey ? true : false, // 保留用户的开关状态
       provider: config.provider,
       apiKey: currentApiKey,
       model: currentModel || defaultModels[config.provider],
@@ -613,8 +613,9 @@ const PrivacyModal = ({ t, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}></div>
-      <div className="relative w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-[2rem] p-6 shadow-2xl border border-white/60 dark:border-white/10 animate-scale-up max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="relative w-full max-w-lg bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-[2rem] shadow-2xl border border-white/60 dark:border-white/10 animate-scale-up max-h-[85vh] overflow-hidden flex flex-col">
+        {/* 固定头部 */}
+        <div className="flex items-center justify-between p-6 pb-4 shrink-0">
           <h3 className="text-xl font-black text-gray-800 dark:text-white flex items-center">
             <Shield size={24} className="mr-2 text-green-500" /> {t.privacyTitle}
           </h3>
@@ -622,27 +623,42 @@ const PrivacyModal = ({ t, onClose }) => {
             <X size={20} className="text-gray-400" />
           </button>
         </div>
-        <div className="space-y-4">
-          <div className="p-4 bg-green-50/50 dark:bg-green-900/20 rounded-2xl border border-green-100 dark:border-green-800/30">
-            <h4 className="font-bold text-green-700 dark:text-green-300 mb-1">{t.privacyContent1}</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300">{t.privacyDesc1}</p>
-          </div>
-          <div className="p-4 bg-yellow-50/50 dark:bg-yellow-900/20 rounded-2xl border border-yellow-100 dark:border-yellow-800/30">
-            <h4 className="font-bold text-yellow-700 dark:text-yellow-300 mb-1">{t.privacyContent2}</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300">{t.privacyDesc2}</p>
-          </div>
-          <div className="p-4 bg-purple-50/50 dark:bg-purple-900/20 rounded-2xl border border-purple-100 dark:border-purple-800/30">
-            <h4 className="font-bold text-purple-700 dark:text-purple-300 mb-1">{t.privacyContent3}</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300">{t.privacyDesc3}</p>
-          </div>
-          <div className="p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/30">
-            <h4 className="font-bold text-blue-700 dark:text-blue-300 mb-1">{t.privacyContent4}</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300">{t.privacyDesc4}</p>
+        
+        {/* 可滚动内容区 */}
+        <div className="flex-1 overflow-y-auto px-6 ios-scrollbar">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">{t.privacyLastUpdate}</p>
+          
+          <div className="space-y-5 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+            <p>{t.privacyIntro}</p>
+            
+            <div>
+              <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t.privacySection1Title}</h4>
+              <p className="whitespace-pre-line">{t.privacySection1Content}</p>
+            </div>
+            
+            <div>
+              <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t.privacySection2Title}</h4>
+              <p className="whitespace-pre-line">{t.privacySection2Content}</p>
+            </div>
+            
+            <div>
+              <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t.privacySection3Title}</h4>
+              <p className="whitespace-pre-line">{t.privacySection3Content}</p>
+            </div>
+            
+            <div>
+              <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t.privacySection4Title}</h4>
+              <p className="whitespace-pre-line">{t.privacySection4Content}</p>
+            </div>
           </div>
         </div>
-        <button onClick={onClose} className="w-full mt-6 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-teal-500 shadow-lg shadow-green-500/30">
-          {t.confirm}
-        </button>
+        
+        {/* 固定底部按钮 */}
+        <div className="p-6 pt-4 shrink-0">
+          <button onClick={onClose} className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-teal-500 shadow-lg shadow-green-500/30">
+            {t.confirm}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -898,11 +914,63 @@ const ProfileView = ({ t, isZh, toggleLang, user, updateUser, theme, toggleTheme
   const [isEditingName, setIsEditingName] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [tempName, setTempName] = useState(user.name || '');
+  const [aiQuote, setAiQuote] = useState(null);
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
   const dailyQuote = useMemo(() => DATA[targetLang].DAILY_QUOTES[new Date().getDate() % DATA[targetLang].DAILY_QUOTES.length], [targetLang]);
 
+  // 当语言变化时清除 AI 生成的每日一句
+  useEffect(() => {
+    setAiQuote(null);
+  }, [targetLang, isZh]);
+
   const displayName = user.name || t.defaultName;
   const saveName = () => { if (tempName.trim()) { updateUser({ ...user, name: tempName.trim() }); setIsEditingName(false); } }
+
+  const generateAIQuote = async () => {
+    if (!aiConfig?.enabled || !aiConfig?.apiKey) return;
+    setIsLoadingQuote(true);
+    const langName = targetLang === 'ja' ? 'Japanese' : 'Korean';
+    const userLang = isZh ? 'Chinese' : 'English';
+    const prompt = `Generate a short, inspiring ${langName} sentence for language learners. Include:
+1. The ${langName} sentence (natural, useful daily expression)
+2. Romanization
+3. ${userLang} translation
+
+Format exactly like this (no extra text):
+[${langName} sentence]
+[romanization]
+[translation]`;
+
+    try {
+      let response, data, text;
+      if (aiConfig.provider === 'gemini') {
+        response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model || 'gemini-2.0-flash'}:generateContent?key=${aiConfig.apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+        );
+        data = await response.json();
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        let endpoint = aiConfig.endpoint || 'https://api.openai.com/v1';
+        if (!endpoint.includes('/chat/completions')) endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.apiKey}` },
+          body: JSON.stringify({ model: aiConfig.model || 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }] })
+        });
+        data = await response.json();
+        text = data.choices?.[0]?.message?.content || '';
+      }
+      const lines = text.trim().split('\n').filter(l => l.trim());
+      if (lines.length >= 3) {
+        setAiQuote({ ja: lines[0], ro: lines[1], zh: lines[2] });
+      }
+    } catch (e) {
+      console.error('AI quote failed:', e);
+    }
+    setIsLoadingQuote(false);
+  };
 
   return (
     <div className="space-y-6 pb-32 animate-fade-in max-w-lg md:max-w-2xl mx-auto">
@@ -931,10 +999,21 @@ const ProfileView = ({ t, isZh, toggleLang, user, updateUser, theme, toggleTheme
 
 
           <div className="w-full mb-8 px-4 flex justify-center">
-            <div className="bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/30 text-center w-full p-4 backdrop-blur-sm">
+            <div className="bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/30 text-center w-full p-4 backdrop-blur-sm relative">
               <p className="text-xs text-blue-500 font-bold mb-1 flex items-center justify-center uppercase tracking-widest"><span className="mr-1">✨</span> {t.quote}</p>
-              <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{dailyQuote.ja}</p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{isZh ? dailyQuote.zh : dailyQuote.ro}</p>
+              {isLoadingQuote ? (
+                <p className="text-sm font-bold text-gray-400 dark:text-gray-500 animate-pulse">{t.aiDailyLoading}</p>
+              ) : (
+                <>
+                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{aiQuote?.ja || dailyQuote.ja}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{aiQuote ? aiQuote.zh : (isZh ? dailyQuote.zh : dailyQuote.ro)}</p>
+                </>
+              )}
+              {aiConfig?.enabled && aiConfig?.apiKey && (
+                <button onClick={generateAIQuote} disabled={isLoadingQuote} className="absolute top-2 right-2 p-1.5 rounded-full bg-white/60 dark:bg-black/20 text-blue-500 hover:bg-white dark:hover:bg-black/40 transition-colors disabled:opacity-50" title={t.aiDailyGenerate}>
+                  <RefreshCw size={14} className={isLoadingQuote ? 'animate-spin' : ''} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -1221,6 +1300,8 @@ const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFi
   const [isFlipped, setIsFlipped] = useState(false);
   const [aiExplanation, setAiExplanation] = useState(null);
   const [isExplaining, setIsExplaining] = useState(false);
+  const [memoryTip, setMemoryTip] = useState(null);
+  const [isLoadingTip, setIsLoadingTip] = useState(false);
   const shuffledList = useMemo(() => shuffleArray(vocabList), [vocabList]);
   const currentCard = shuffledList[currentIndex];
   const isFav = userFavorites.includes(currentCard?.id);
@@ -1228,8 +1309,60 @@ const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFi
   const handleNext = () => {
     setIsFlipped(false);
     setAiExplanation(null);
+    setMemoryTip(null);
     updateGoal('words', 1);
     setTimeout(() => { if (currentIndex < shuffledList.length - 1) setCurrentIndex(p => p + 1); else onFinish(); }, 200);
+  };
+
+  const getMemoryTip = async () => {
+    if (!aiConfig?.enabled || !aiConfig?.apiKey || !currentCard) return;
+    setIsLoadingTip(true);
+    setMemoryTip(null);
+
+    const langName = targetLang === 'ja' ? 'Japanese' : 'Korean';
+    const userLang = isZh ? 'Chinese' : 'English';
+    const prompt = `Create a fun and memorable mnemonic for this ${langName} word. Reply in ${userLang}.
+Word: ${currentCard.ja} (${currentCard.ro})
+Meaning: ${isZh ? currentCard.zh : currentCard.en}
+
+Create ONE creative memory trick using:
+- Sound association (the pronunciation sounds like...)
+- Visual imagery (imagine...)
+- Story or scene
+
+Keep it short (2-3 sentences), fun and easy to remember. Add an emoji. No markdown.`;
+
+    try {
+      let response, data, text;
+      if (aiConfig.provider === 'gemini') {
+        response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model || 'gemini-2.0-flash'}:generateContent?key=${aiConfig.apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          }
+        );
+        data = await response.json();
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        let endpoint = aiConfig.endpoint || 'https://api.openai.com/v1';
+        if (!endpoint.includes('/chat/completions')) {
+          endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+        }
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.apiKey}` },
+          body: JSON.stringify({ model: aiConfig.model || 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }] })
+        });
+        data = await response.json();
+        text = data.choices?.[0]?.message?.content || '';
+      }
+      setMemoryTip(text);
+    } catch (e) {
+      setMemoryTip(isZh ? '生成失败，请重试' : 'Failed, please retry');
+    }
+    setIsLoadingTip(false);
   };
 
   const getAIExplanation = async () => {
@@ -1307,22 +1440,35 @@ Keep it concise and helpful. No markdown formatting.`;
                 <button onClick={() => speak(currentCard.kana || currentCard.ja)} className="p-2.5 bg-white/50 dark:bg-gray-700/50 rounded-full text-blue-500 dark:text-blue-300 hover:scale-110 transition-transform shadow-sm"><Volume2 size={20} /></button>
                 <button onClick={() => toggleFavorite(currentCard.id)} className={`p-2.5 rounded-full transition-all hover:scale-110 shadow-sm ${isFav ? 'bg-pink-100 text-pink-500' : 'bg-white/50 dark:bg-gray-700/50 text-gray-400'}`}><Heart size={20} fill={isFav ? "currentColor" : "none"} /></button>
                 {aiConfig?.enabled && aiConfig?.apiKey && (
-                  <button onClick={getAIExplanation} disabled={isExplaining} className="p-2.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white hover:scale-110 transition-transform shadow-sm disabled:opacity-50">
-                    <Sparkles size={20} className={isExplaining ? 'animate-spin' : ''} />
-                  </button>
+                  <>
+                    <button onClick={() => memoryTip ? setMemoryTip(null) : getMemoryTip()} disabled={isLoadingTip} className={`p-2.5 rounded-full hover:scale-110 transition-transform shadow-sm disabled:opacity-50 ${memoryTip ? 'bg-yellow-100 text-yellow-600 ring-2 ring-yellow-400' : 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'}`} title={t.aiMemoryTip}>
+                      <Lightbulb size={20} className={isLoadingTip ? 'animate-pulse' : ''} />
+                    </button>
+                    <button onClick={() => aiExplanation ? setAiExplanation(null) : getAIExplanation()} disabled={isExplaining} className={`p-2.5 rounded-full hover:scale-110 transition-transform shadow-sm disabled:opacity-50 ${aiExplanation ? 'bg-purple-100 text-purple-600 ring-2 ring-purple-400' : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'}`}>
+                      <Sparkles size={20} className={isExplaining ? 'animate-spin' : ''} />
+                    </button>
+                  </>
                 )}
               </div>
             </div>
-            {aiExplanation ? (
+            {aiExplanation || memoryTip ? (
               <div className="flex-1 flex flex-col overflow-y-auto px-2" onClick={e => e.stopPropagation()}>
                 <div className="text-center mb-3">
                   <h2 className="text-3xl font-medium text-gray-800 dark:text-white">{currentCard.ja}</h2>
                   <p className="text-sm text-gray-400">{currentCard.ro} · {isZh ? currentCard.zh : currentCard.en}</p>
                 </div>
-                <div className="flex-1 bg-purple-50/50 dark:bg-purple-900/20 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap overflow-y-auto">
-                  {aiExplanation}
-                </div>
-                <button onClick={() => setAiExplanation(null)} className="mt-3 text-xs text-purple-500 font-bold">{t.close}</button>
+                {memoryTip && (
+                  <div className="flex-1 bg-yellow-50/50 dark:bg-yellow-900/20 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap overflow-y-auto border border-yellow-200 dark:border-yellow-800/30 mb-2">
+                    <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400 font-bold text-xs"><Lightbulb size={14} /> {t.aiMemoryTip}</div>
+                    {memoryTip}
+                  </div>
+                )}
+                {aiExplanation && (
+                  <div className="flex-1 bg-purple-50/50 dark:bg-purple-900/20 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap overflow-y-auto">
+                    {aiExplanation}
+                  </div>
+                )}
+                <button onClick={() => { setAiExplanation(null); setMemoryTip(null); }} className="mt-3 text-xs text-purple-500 font-bold">{t.close}</button>
               </div>
             ) : (
               <>
@@ -1491,7 +1637,9 @@ export default function App() {
   const [practiceMode, setPracticeMode] = useState(null);
   const [filterFavs, setFilterFavs] = useState(false);
   const [toast, setToast] = useState({ show: false, msg: '' });
-  const [onlineMode, setOnlineMode] = useState(false);
+  const [onlineMode, setOnlineMode] = useState(() => {
+    return localStorage.getItem('kawaii_online_mode') === 'true';
+  });
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [logs, setLogs] = useState([]);
   const [showResetModal, setShowResetModal] = useState(false);
@@ -1645,14 +1793,16 @@ export default function App() {
       setTimeout(() => {
         setIsLoadingData(false);
         setOnlineMode(true);
+        localStorage.setItem('kawaii_online_mode', 'true');
         showToast(`${t.toastData} ${t.modeOnline}`);
       }, 1500);
     } else {
-      setOnlineMode(false);
-      // 关闭离线模式时也关闭 AI
+      // 关闭在线模式时也关闭 AI
       if (aiConfig.enabled) {
         saveAIConfig({ ...aiConfig, enabled: false });
       }
+      setOnlineMode(false);
+      localStorage.setItem('kawaii_online_mode', 'false');
       showToast(`${t.toastData} ${t.modeOffline}`);
     }
   }
@@ -1664,6 +1814,7 @@ export default function App() {
       setTimeout(() => {
         setIsLoadingData(false);
         setOnlineMode(true);
+        localStorage.setItem('kawaii_online_mode', 'true');
       }, 500);
     }
     setAIConfig(config);
@@ -1804,6 +1955,12 @@ export default function App() {
         .rotate-y-180 { transform: rotateY(180deg); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .ios-scrollbar::-webkit-scrollbar { width: 6px; }
+        .ios-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .ios-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        .ios-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+        .dark .ios-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+        .dark .ios-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
       `}</style>
     </div >
   );
