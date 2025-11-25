@@ -69,12 +69,12 @@ const speak = (text, langOverride = null) => {
       const targetLangCode = langOverride || (window.__appTargetLang || 'ja');
       utterance.lang = targetLangCode === 'ko' ? 'ko-KR' : 'ja-JP';
       utterance.rate = 0.9;
-      
+
       // Try to find a voice that matches the language
       const voices = window.speechSynthesis.getVoices();
       const preferredVoice = voices.find(v => v.lang.startsWith(targetLangCode === 'ko' ? 'ko' : 'ja'));
       if (preferredVoice) utterance.voice = preferredVoice;
-      
+
       window.speechSynthesis.speak(utterance);
     }, 10);
   }
@@ -138,9 +138,7 @@ const GlassCard = ({ children, className = "", onClick, noPadding = false, activ
     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-70 dark:opacity-20"></div>
     <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/20 to-transparent dark:from-white/5 pointer-events-none"></div>
 
-    {shine && (
-      <div className="absolute inset-0 z-0 bg-gradient-to-tr from-transparent via-white/30 dark:via-white/10 to-transparent translate-x-[-100%] animate-shimmer pointer-events-none"></div>
-    )}
+
     <div className="relative z-10 w-full h-full">{children}</div>
   </div>
 );
@@ -219,7 +217,7 @@ const SectionHeader = ({ title, subtitle, targetLang }) => {
 
 const HistoryModal = ({ logs, onClose, t }) => {
   const [typeFilter, setTypeFilter] = useState('all');
-  
+
   const filteredLogs = useMemo(() => {
     if (typeFilter === 'all') return logs;
     return logs.filter(log => log.type === typeFilter);
@@ -295,11 +293,10 @@ const HistoryModal = ({ logs, onClose, t }) => {
             <button
               key={btn.key}
               onClick={() => setTypeFilter(btn.key)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                typeFilter === btn.key
-                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
-                  : 'bg-white/60 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-white/20'
-              }`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${typeFilter === btn.key
+                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                : 'bg-white/60 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-white/20'
+                }`}
             >
               {btn.label}
             </button>
@@ -586,13 +583,12 @@ const DailyGoalsCard = ({ t, goals, onClaim }) => {
             <button
               onClick={() => onClaim(g.id)}
               disabled={!g.completed || g.claimed}
-              className={`shrink-0 min-w-[60px] px-4 py-1.5 rounded-xl text-xs font-bold transition-all border backdrop-blur-sm ${
-                g.claimed
-                  ? 'bg-gray-200 text-gray-400 border-white/40 dark:bg-gray-800/70 dark:text-gray-500 dark:border-white/10'
-                  : g.completed
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 animate-pulse border-transparent dark:from-green-400 dark:to-emerald-400 dark:text-gray-900'
-                    : 'bg-white/80 text-gray-500 border-white/60 dark:bg-white/10 dark:text-gray-200 dark:border-white/5'
-              }`}
+              className={`shrink-0 min-w-[60px] px-4 py-1.5 rounded-xl text-xs font-bold transition-all border backdrop-blur-sm ${g.claimed
+                ? 'bg-gray-200 text-gray-400 border-white/40 dark:bg-gray-800/70 dark:text-gray-500 dark:border-white/10'
+                : g.completed
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 animate-pulse border-transparent dark:from-green-400 dark:to-emerald-400 dark:text-gray-900'
+                  : 'bg-white/80 text-gray-500 border-white/60 dark:bg-white/10 dark:text-gray-200 dark:border-white/5'
+                }`}
             >
               {g.claimed ? t.claimed : t.claim}
             </button>
@@ -677,7 +673,7 @@ const ProfileView = ({ t, isZh, toggleLang, user, updateUser, theme, toggleTheme
           <div className="flex items-center space-x-4"><div className="p-3 bg-orange-100/80 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-2xl group-hover:scale-110 transition-transform">{theme === 'dark' ? <Moon size={22} /> : <Sun size={22} />}</div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.themeMode}</span></div><span className="text-sm font-bold text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-black/20 px-3 py-1 rounded-xl shadow-sm">{theme === 'dark' ? t.themeDark : t.themeLight}</span>
         </button>
         <button onClick={toggleOnlineMode} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
-          <div className="flex items-center space-x-4"><div className="p-3 bg-cyan-100/80 dark:bg-cyan-900/50 text-cyan-600 dark:text-cyan-400 rounded-2xl group-hover:scale-110 transition-transform">{onlineMode ? <Wifi size={22} /> : <WifiOff size={22} />}</div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.dataMode}</span></div><span className={`text-sm font-bold px-3 py-1 rounded-xl shadow-sm ${onlineMode ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500'}`}>{onlineMode ? t.modeOnline : t.modeOffline}</span>
+          <div className="flex items-center space-x-4"><div className="p-3 bg-cyan-100/80 dark:bg-cyan-900/50 text-cyan-600 dark:text-cyan-400 rounded-2xl group-hover:scale-110 transition-transform">{onlineMode ? <Wifi size={22} /> : <WifiOff size={22} />}</div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg whitespace-nowrap">{t.dataMode}</span></div><span className={`text-sm font-bold px-3 py-1 rounded-xl shadow-sm whitespace-nowrap ${onlineMode ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500 dark:bg-black/20 dark:text-gray-400'}`}>{onlineMode ? t.modeOnline : t.modeOffline}</span>
         </button>
         <button onClick={toggleLang} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
           <div className="flex items-center space-x-4"><div className="p-3 bg-indigo-100/80 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-2xl group-hover:scale-110 transition-transform"><Globe size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.switchLang}</span></div><span className="text-sm font-bold text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-black/20 px-3 py-1 rounded-xl shadow-sm">{isZh ? '中文' : 'EN'}</span>
