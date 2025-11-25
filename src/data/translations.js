@@ -153,6 +153,18 @@ export const TRANSLATIONS = {
         fillBlankScore: '得分',
         fillBlankGenerating: 'AI 正在出题...',
         fillBlankNeedsAI: '需要开启 AI 助手',
+        // 用户引导
+        guideTitle: '快速上手',
+        guideStep1Title: '基础学习',
+        guideStep1Desc: '离线模式下可学习日语五十音/韩语谚文、单词闪卡、连连看和每日测验',
+        guideStep2Title: '在线模式',
+        guideStep2Desc: '开启后可访问更多云端词库，解锁更丰富的学习内容',
+        guideStep3Title: 'AI 助手',
+        guideStep3Desc: '配置 API Key 后可使用智能出题、单词解释等高级功能',
+        guideNote: '不开启在线模式和 AI 助手也能使用所有基础功能哦！',
+        guideStart: '开始学习',
+        guideSkip: '跳过引导',
+        interfaceLang: '界面语言',
     },
     en: {
         appTitle: 'Nihongo Start',
@@ -308,5 +320,17 @@ export const TRANSLATIONS = {
         fillBlankScore: 'Score',
         fillBlankGenerating: 'AI generating...',
         fillBlankNeedsAI: 'Requires AI Assistant',
+        // User Guide
+        guideTitle: 'Quick Start',
+        guideStep1Title: 'Basic Learning',
+        guideStep1Desc: 'Learn Japanese Kana / Korean Hangul, Flashcards, Matching Game and Daily Quiz in offline mode',
+        guideStep2Title: 'Online Mode',
+        guideStep2Desc: 'Enable to access more cloud vocabulary and richer learning content',
+        guideStep3Title: 'AI Assistant',
+        guideStep3Desc: 'Configure API Key to use smart quizzes, word explanations and more',
+        guideNote: 'All basic features work without online mode or AI assistant!',
+        guideStart: 'Start Learning',
+        guideSkip: 'Skip Guide',
+        interfaceLang: 'Interface',
     }
 };
