@@ -690,7 +690,7 @@ const ProfileView = ({ t, isZh, toggleLang, user, updateUser, theme, toggleTheme
   )
 };
 
-const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, addMistake, updateGoal }) => {
+const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, addMistake, updateGoal, user, toggleFavorite }) => {
   // ... (QuizView hooks remain the same, fixed useEffect logic)
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -797,14 +797,24 @@ const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, 
         {combo > 1 && <div className="text-yellow-500 font-black text-xl animate-bounce mb-4 drop-shadow-sm">🔥 {combo} Combo!</div>}
         <GlassCard className="w-full mb-8 flex flex-col items-center justify-center py-12 !bg-white/80 dark:!bg-gray-800/80">
           {quizMode === 'visual' ? (
-            <>
-              <h2 className="text-6xl font-medium text-gray-800 dark:text-white mb-2">{currentQ.answer.ja}</h2>
+            <div className="flex flex-col items-center justify-center w-full">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <h2 className="text-6xl font-medium text-gray-800 dark:text-white">{currentQ.answer.ja}</h2>
+                <button onClick={(e) => { e.stopPropagation(); speak(currentQ.answer.kana || currentQ.answer.ja); }} className="p-2.5 bg-white/50 dark:bg-gray-700/50 rounded-full text-blue-500 dark:text-blue-300 hover:scale-110 transition-transform shadow-sm">
+                  <Volume2 size={24} />
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); toggleFavorite(currentQ.answer.id); }} className={`p-2.5 rounded-full transition-all hover:scale-110 shadow-sm ${user.favorites?.includes(currentQ.answer.id) ? 'bg-pink-100 text-pink-500' : 'bg-white/50 dark:bg-gray-700/50 text-gray-400'}`}>
+                  <Heart size={24} fill={user.favorites?.includes(currentQ.answer.id) ? "currentColor" : "none"} />
+                </button>
+              </div>
               <p className="text-gray-400 dark:text-gray-500">{currentQ.answer.ro}</p>
-            </>
+            </div>
           ) : (
-            <button onClick={() => speak(currentQ.answer.kana || currentQ.answer.ja)} className="p-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 hover:scale-110 transition-transform animate-pulse-slow">
-              <Volume2 size={64} />
-            </button>
+            <div className="flex flex-col items-center justify-center w-full">
+              <button onClick={() => speak(currentQ.answer.kana || currentQ.answer.ja)} className="p-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 hover:scale-110 transition-transform animate-pulse-slow">
+                <Volume2 size={64} />
+              </button>
+            </div>
           )}
         </GlassCard>
         <div className="grid grid-cols-1 gap-3 w-full max-w-md">
@@ -1253,7 +1263,7 @@ export default function App() {
             {practiceMode === 'mistake' && <MistakeView t={t} isZh={isZh} vocabList={currentVocabList} userMistakes={user.mistakes || []} removeMistake={removeMistake} onFinish={() => setPracticeMode(null)} />}
             {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} updateGoal={updateGoal} />}
             {practiceMode === 'matching' && <MatchingGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); addXp(20); }} addLog={addLog} addMistake={addMistake} updateGoal={updateGoal} />}
-            {practiceMode === 'quiz' && <QuizView t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} praisePhrases={DATA[targetLang].PRAISE_PHRASES} addMistake={addMistake} updateGoal={updateGoal} />}
+            {practiceMode === 'quiz' && <QuizView t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} praisePhrases={DATA[targetLang].PRAISE_PHRASES} addMistake={addMistake} updateGoal={updateGoal} user={user} toggleFavorite={toggleFav} />}
           </div>
         )}
       </main>
