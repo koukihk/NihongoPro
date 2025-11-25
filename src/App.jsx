@@ -4,7 +4,7 @@ import {
   Volume2, Globe, Edit3, X, Zap, Trophy,
   Sparkles, Heart, CheckCircle, Star as StarIcon,
   Sun, Moon, Wifi, WifiOff, CloudLightning, PenLine, Palette, History, Clock, Github, Quote, ArrowRight,
-  Languages, Target, Download, Share2, Bot, Settings, Eye, EyeOff, Shield, Lightbulb, RefreshCw
+  Languages, Target, Download, Share2, Bot, Settings, Eye, EyeOff, Shield, Lightbulb, RefreshCw, PenTool
 } from 'lucide-react';
 import * as jaData from './data/ja';
 import * as koData from './data/ko';
@@ -244,6 +244,7 @@ const HistoryModal = ({ logs, onClose, t }) => {
     { key: 'all', label: t.historyFilterAll },
     { key: 'quiz', label: t.historyFilterQuiz },
     { key: 'matching', label: t.historyFilterMatching },
+    { key: 'fillblank', label: t.historyFilterFillBlank },
     { key: 'writing', label: t.historyFilterWriting }
   ];
 
@@ -255,15 +256,15 @@ const HistoryModal = ({ logs, onClose, t }) => {
         <div className="space-y-2">
           {groupLogs.map((log, idx) => (
             <div key={idx} className="flex items-center p-3 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/40 dark:border-white/5">
-              <div className={`p-3 rounded-xl mr-3 ${log.type === 'quiz' ? 'bg-purple-100 text-purple-600' : log.type === 'matching' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
-                {log.type === 'quiz' ? <Trophy size={18} /> : log.type === 'matching' ? <Gamepad2 size={18} /> : <Edit3 size={18} />}
+              <div className={`p-3 rounded-xl mr-3 ${log.type === 'quiz' ? 'bg-purple-100 text-purple-600' : log.type === 'matching' ? 'bg-green-100 text-green-600' : log.type === 'fillblank' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                {log.type === 'quiz' ? <Trophy size={18} /> : log.type === 'matching' ? <Gamepad2 size={18} /> : log.type === 'fillblank' ? <PenTool size={18} /> : <Edit3 size={18} />}
               </div>
               <div className="flex-1">
                 <h4 className="font-bold text-gray-800 dark:text-gray-200 text-sm">
-                  {log.type === 'quiz' ? t.logQuiz : log.type === 'matching' ? t.logMatching : t.logWriting}
+                  {log.type === 'quiz' ? t.logQuiz : log.type === 'matching' ? t.logMatching : log.type === 'fillblank' ? t.logFillBlank : t.logWriting}
                 </h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {log.type === 'quiz' ? `${t.quizScore}: ${log.score}` : log.content}
+                  {(log.type === 'quiz' || log.type === 'fillblank') ? `${t.quizScore}: ${log.score}` : log.content}
                 </p>
               </div>
               <div className="text-[10px] text-gray-400 font-bold flex flex-col items-end">
@@ -623,36 +624,36 @@ const PrivacyModal = ({ t, onClose }) => {
             <X size={20} className="text-gray-400" />
           </button>
         </div>
-        
+
         {/* 可滚动内容区 */}
         <div className="flex-1 overflow-y-auto px-6 ios-scrollbar">
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">{t.privacyLastUpdate}</p>
-          
+
           <div className="space-y-5 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
             <p>{t.privacyIntro}</p>
-            
+
             <div>
               <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t.privacySection1Title}</h4>
               <p className="whitespace-pre-line">{t.privacySection1Content}</p>
             </div>
-            
+
             <div>
               <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t.privacySection2Title}</h4>
               <p className="whitespace-pre-line">{t.privacySection2Content}</p>
             </div>
-            
+
             <div>
               <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t.privacySection3Title}</h4>
               <p className="whitespace-pre-line">{t.privacySection3Content}</p>
             </div>
-            
+
             <div>
               <h4 className="font-bold text-gray-800 dark:text-white mb-2">{t.privacySection4Title}</h4>
               <p className="whitespace-pre-line">{t.privacySection4Content}</p>
             </div>
           </div>
         </div>
-        
+
         {/* 固定底部按钮 */}
         <div className="p-6 pt-4 shrink-0">
           <button onClick={onClose} className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-teal-500 shadow-lg shadow-green-500/30">
@@ -1488,14 +1489,20 @@ Keep it concise and helpful. No markdown formatting.`;
 };
 
 
-const MistakeView = ({ t, isZh, vocabList, userMistakes, removeMistake, onFinish }) => {
+const MistakeView = ({ t, isZh, vocabList, userMistakes, removeMistake, onFinish, aiConfig, targetLang }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState(null);
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [memoryTip, setMemoryTip] = useState(null);
+  const [isLoadingTip, setIsLoadingTip] = useState(false);
   const mistakeList = useMemo(() => vocabList.filter(v => userMistakes.includes(v.id)), [vocabList, userMistakes]);
   const currentCard = mistakeList[currentIndex];
 
   const handleNext = () => {
     setIsFlipped(false);
+    setAiExplanation(null);
+    setMemoryTip(null);
     setTimeout(() => {
       if (currentIndex < mistakeList.length - 1) setCurrentIndex(p => p + 1);
       else onFinish();
@@ -1504,11 +1511,73 @@ const MistakeView = ({ t, isZh, vocabList, userMistakes, removeMistake, onFinish
 
   const handleMastered = () => {
     removeMistake(currentCard.id);
+    setAiExplanation(null);
+    setMemoryTip(null);
     if (mistakeList.length === 1) {
       onFinish();
     } else if (currentIndex >= mistakeList.length - 1) {
       setCurrentIndex(0);
     }
+  };
+
+  const getMemoryTip = async () => {
+    if (!aiConfig?.enabled || !aiConfig?.apiKey || !currentCard) return;
+    setIsLoadingTip(true);
+    const langName = targetLang === 'ja' ? 'Japanese' : 'Korean';
+    const userLang = isZh ? 'Chinese' : 'English';
+    const prompt = `Create a fun mnemonic for this ${langName} word. Reply in ${userLang}.
+Word: ${currentCard.ja} (${currentCard.ro}) - ${isZh ? currentCard.zh : currentCard.en}
+Create ONE creative memory trick (2-3 sentences). Add an emoji. No markdown.`;
+    try {
+      let text = '';
+      if (aiConfig.provider === 'gemini') {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model || 'gemini-2.0-flash'}:generateContent?key=${aiConfig.apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+        const data = await res.json();
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        let endpoint = aiConfig.endpoint || 'https://api.openai.com/v1';
+        if (!endpoint.includes('/chat/completions')) endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+        const res = await fetch(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.apiKey}` },
+          body: JSON.stringify({ model: aiConfig.model || 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }] })
+        });
+        const data = await res.json();
+        text = data.choices?.[0]?.message?.content || '';
+      }
+      setMemoryTip(text);
+    } catch (e) { setMemoryTip(isZh ? '生成失败' : 'Failed'); }
+    setIsLoadingTip(false);
+  };
+
+  const getAIExplanation = async () => {
+    if (!aiConfig?.enabled || !aiConfig?.apiKey || !currentCard) return;
+    setIsExplaining(true);
+    const langName = targetLang === 'ja' ? 'Japanese' : 'Korean';
+    const userLang = isZh ? 'Chinese' : 'English';
+    const prompt = `Explain this ${langName} word briefly in ${userLang}.
+Word: ${currentCard.ja} (${currentCard.ro}) - ${isZh ? currentCard.zh : currentCard.en}
+Include: 1 example sentence, usage tip, 1-2 related words. No markdown.`;
+    try {
+      let text = '';
+      if (aiConfig.provider === 'gemini') {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model || 'gemini-2.0-flash'}:generateContent?key=${aiConfig.apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+        const data = await res.json();
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        let endpoint = aiConfig.endpoint || 'https://api.openai.com/v1';
+        if (!endpoint.includes('/chat/completions')) endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+        const res = await fetch(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.apiKey}` },
+          body: JSON.stringify({ model: aiConfig.model || 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }] })
+        });
+        const data = await res.json();
+        text = data.choices?.[0]?.message?.content || '';
+      }
+      setAiExplanation(text);
+    } catch (e) { setAiExplanation(isZh ? '获取失败' : 'Failed'); }
+    setIsExplaining(false);
   };
 
   if (!currentCard) return (
@@ -1530,10 +1599,45 @@ const MistakeView = ({ t, isZh, vocabList, userMistakes, removeMistake, onFinish
           <GlassCard className="absolute inset-0 backface-hidden flex flex-col !rounded-[2.5rem] !bg-white/80 dark:!bg-gray-800/80 border-red-200 dark:border-red-900/50" shine={true}>
             <div className="flex justify-between items-start mb-4" onClick={e => e.stopPropagation()}>
               <span className="px-3 py-1 bg-red-100/50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-full text-xs font-bold uppercase tracking-wider">Mistake</span>
-              <button onClick={() => speak(currentCard.kana || currentCard.ja)} className="p-2.5 bg-white/50 dark:bg-gray-700/50 rounded-full text-blue-500 dark:text-blue-300 hover:scale-110 transition-transform shadow-sm"><Volume2 size={20} /></button>
+              <div className="flex space-x-2">
+                <button onClick={() => speak(currentCard.kana || currentCard.ja)} className="p-2.5 bg-white/50 dark:bg-gray-700/50 rounded-full text-blue-500 dark:text-blue-300 hover:scale-110 transition-transform shadow-sm"><Volume2 size={20} /></button>
+                {aiConfig?.enabled && aiConfig?.apiKey && (
+                  <>
+                    <button onClick={() => memoryTip ? setMemoryTip(null) : getMemoryTip()} disabled={isLoadingTip} className={`p-2.5 rounded-full hover:scale-110 transition-transform shadow-sm disabled:opacity-50 ${memoryTip ? 'bg-yellow-100 text-yellow-600 ring-2 ring-yellow-400' : 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'}`} title={t.aiMemoryTip}>
+                      <Lightbulb size={20} className={isLoadingTip ? 'animate-pulse' : ''} />
+                    </button>
+                    <button onClick={() => aiExplanation ? setAiExplanation(null) : getAIExplanation()} disabled={isExplaining} className={`p-2.5 rounded-full hover:scale-110 transition-transform shadow-sm disabled:opacity-50 ${aiExplanation ? 'bg-purple-100 text-purple-600 ring-2 ring-purple-400' : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'}`}>
+                      <Sparkles size={20} className={isExplaining ? 'animate-spin' : ''} />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="flex-1 flex flex-col items-center justify-center space-y-4"><h2 className="text-5xl sm:text-6xl font-medium text-gray-800 dark:text-white text-center break-keep leading-tight px-2">{currentCard.ja}</h2><p className="text-xl text-gray-400 dark:text-gray-500 font-medium tracking-wide">{currentCard.ro}</p></div>
-            <div className="mt-4 text-blue-400 text-sm font-bold flex items-center justify-center animate-bounce-slow opacity-80"><RotateCcw size={14} className="mr-1.5" /> {t.flip}</div>
+            {aiExplanation || memoryTip ? (
+              <div className="flex-1 flex flex-col overflow-y-auto px-2" onClick={e => e.stopPropagation()}>
+                <div className="text-center mb-3">
+                  <h2 className="text-3xl font-medium text-gray-800 dark:text-white">{currentCard.ja}</h2>
+                  <p className="text-sm text-gray-400">{currentCard.ro} · {isZh ? currentCard.zh : currentCard.en}</p>
+                </div>
+                {memoryTip && (
+                  <div className="flex-1 bg-yellow-50/50 dark:bg-yellow-900/20 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap overflow-y-auto border border-yellow-200 dark:border-yellow-800/30 mb-2">
+                    <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400 font-bold text-xs"><Lightbulb size={14} /> {t.aiMemoryTip}</div>
+                    {memoryTip}
+                  </div>
+                )}
+                {aiExplanation && (
+                  <div className="flex-1 bg-purple-50/50 dark:bg-purple-900/20 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap overflow-y-auto">
+                    {aiExplanation}
+                  </div>
+                )}
+                <button onClick={() => { setAiExplanation(null); setMemoryTip(null); }} className="mt-3 text-xs text-purple-500 font-bold">{t.close}</button>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 flex flex-col items-center justify-center space-y-4"><h2 className="text-5xl sm:text-6xl font-medium text-gray-800 dark:text-white text-center break-keep leading-tight px-2">{currentCard.ja}</h2><p className="text-xl text-gray-400 dark:text-gray-500 font-medium tracking-wide">{currentCard.ro}</p></div>
+                <div className="mt-4 text-blue-400 text-sm font-bold flex items-center justify-center animate-bounce-slow opacity-80"><RotateCcw size={14} className="mr-1.5" /> {t.flip}</div>
+              </>
+            )}
           </GlassCard>
           <GlassCard className="absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center !rounded-[2.5rem] !bg-gradient-to-br from-red-50/90 to-orange-50/90 dark:from-red-900/80 dark:to-orange-900/80 border border-red-100 dark:border-red-800"><span className="text-xs font-black text-red-400 dark:text-red-200 bg-white/60 dark:bg-black/20 px-4 py-1.5 rounded-full mb-8 uppercase tracking-widest shadow-sm">{t.meaning}</span><h2 className="text-4xl font-bold text-gray-800 dark:text-white text-center px-4 leading-relaxed">{isZh ? currentCard.zh : currentCard.en}</h2></GlassCard>
         </div>
@@ -1550,19 +1654,62 @@ const MistakeView = ({ t, isZh, vocabList, userMistakes, removeMistake, onFinish
   );
 };
 
-const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake, updateGoal }) => {
+const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake, updateGoal, aiConfig, targetLang }) => {
   const [cards, setCards] = useState([]);
   const [selected, setSelected] = useState([]);
   const [matched, setMatched] = useState([]);
   const [isChecking, setIsChecking] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const generateAIVocab = async () => {
+    if (!aiConfig?.enabled || !aiConfig?.apiKey) return null;
+    const langName = targetLang === 'ja' ? 'Japanese' : 'Korean';
+    const userLang = isZh ? 'Chinese' : 'English';
+    const prompt = `Generate 6 ${langName} vocabulary words for a matching game. Reply in JSON only.
+Return format: [{"id":"ai1","ja":"word","ro":"romaji","zh":"Chinese meaning","en":"English meaning"}]
+Mix different categories (food, animals, verbs, adjectives). Keep words simple for beginners.`;
+    try {
+      let text = '';
+      if (aiConfig.provider === 'gemini') {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model || 'gemini-2.0-flash'}:generateContent?key=${aiConfig.apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+        const data = await res.json();
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        let endpoint = aiConfig.endpoint || 'https://api.openai.com/v1';
+        if (!endpoint.includes('/chat/completions')) endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+        const res = await fetch(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.apiKey}` },
+          body: JSON.stringify({ model: aiConfig.model || 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }] })
+        });
+        const data = await res.json();
+        text = data.choices?.[0]?.message?.content || '';
+      }
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+    } catch (e) { console.error('AI vocab generation failed:', e); }
+    return null;
+  };
+
   useEffect(() => {
-    const gameVocab = shuffleArray(vocabList).slice(0, 6);
-    const deck = gameVocab.flatMap(v => [
-      { id: `${v.id}-ja`, vocabId: v.id, content: v.ja, kana: v.kana, type: 'ja' },
-      { id: `${v.id}-mean`, vocabId: v.id, content: isZh ? v.zh : v.en, type: 'mean' }
-    ]);
-    setCards(shuffleArray(deck));
-  }, [vocabList]);
+    const loadCards = async () => {
+      setIsLoading(true);
+      let gameVocab = null;
+      if (aiConfig?.enabled && aiConfig?.apiKey) {
+        gameVocab = await generateAIVocab();
+      }
+      if (!gameVocab) {
+        gameVocab = shuffleArray(vocabList).slice(0, 6);
+      }
+      const deck = gameVocab.flatMap(v => [
+        { id: `${v.id}-ja`, vocabId: v.id, content: v.ja, kana: v.kana || v.ro, type: 'ja' },
+        { id: `${v.id}-mean`, vocabId: v.id, content: isZh ? v.zh : v.en, type: 'mean' }
+      ]);
+      setCards(shuffleArray(deck));
+      setIsLoading(false);
+    };
+    loadCards();
+  }, [vocabList, aiConfig?.enabled]);
   const handleCardClick = (card) => {
     if (isChecking || matched.includes(card.vocabId) || selected.find(s => s.id === card.id)) return;
     if (card.type === 'ja') speak(card.kana || card.content);
@@ -1590,11 +1737,24 @@ const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake,
       }
     }
   };
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full animate-fade-in">
+        <CloudLightning size={48} className="text-purple-400 animate-bounce mb-4" />
+        <p className="text-gray-500 dark:text-gray-400 font-bold">{aiConfig?.enabled ? t.aiGenerating : t.loading}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col animate-fade-in pb-20">
       <div className="flex justify-between items-center mb-6 px-2">
         <button onClick={onFinish} className="p-2 bg-white/40 dark:bg-gray-800/40 rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors"><X size={24} className="text-gray-600 dark:text-gray-300" /></button>
-        <h3 className="font-bold text-xl text-gray-700 dark:text-gray-200">{t.matchTitle}</h3><div className="w-10"></div>
+        <div className="flex items-center gap-2">
+          <h3 className="font-bold text-xl text-gray-700 dark:text-gray-200">{t.matchTitle}</h3>
+          {aiConfig?.enabled && aiConfig?.apiKey && <span className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold">AI</span>}
+        </div>
+        <div className="w-10"></div>
       </div>
       <div className="grid grid-cols-3 gap-3 auto-rows-fr flex-1 max-w-md mx-auto w-full px-2">
         {cards.map(card => {
@@ -1602,6 +1762,212 @@ const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake,
           const isMat = matched.includes(card.vocabId);
           return (<div key={card.id} onClick={() => handleCardClick(card)} className={`relative flex items-center justify-center p-2 text-center rounded-2xl transition-all duration-300 font-bold shadow-sm cursor-pointer border ${isMat ? 'opacity-0 scale-50' : 'opacity-100'} ${isSel ? 'bg-blue-100/90 dark:bg-blue-900/80 border-blue-400 text-blue-600 dark:text-blue-200 scale-105 shadow-md' : 'bg-white/60 dark:bg-gray-800/60 border-white/40 dark:border-white/10 hover:bg-white/80 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'} ${isSel && isChecking && selected.length === 2 && selected[0].vocabId !== selected[1].vocabId ? 'bg-red-100 dark:bg-red-900/50 border-red-400 animate-shake' : ''} backdrop-blur-md`}>{card.content}</div>)
         })}
+      </div>
+    </div>
+  );
+};
+
+const FillBlankGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, aiConfig, targetLang, updateGoal }) => {
+  const [questions, setQuestions] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [isCorrect, setIsCorrect] = useState(null);
+  const [score, setScore] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  const generateQuestions = async () => {
+    if (!aiConfig?.enabled || !aiConfig?.apiKey) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    const selectedVocab = shuffleArray(vocabList).slice(0, 5);
+    const langName = targetLang === 'ja' ? 'Japanese' : 'Korean';
+    const userLang = isZh ? 'Chinese' : 'English';
+
+    const exampleTranslation = isZh ? '我每天吃苹果。' : 'I eat apples every day.';
+    const prompt = `Generate 5 fill-in-the-blank sentences for ${langName} learners. Reply in JSON only.
+
+Words to use:
+${selectedVocab.map((v, i) => `${i + 1}. ${v.ja} (${v.ro}) - ${isZh ? v.zh : v.en}`).join('\n')}
+
+IMPORTANT RULES:
+1. Each sentence MUST have clear context so ONLY the correct answer fits grammatically and semantically
+2. Wrong options must be CLEARLY wrong - they should NOT fit the sentence context at all
+3. Avoid ambiguous sentences where multiple options could be correct
+4. The translation must match the sentence with the correct answer filled in
+5. Use specific context clues (time, place, action) to make the answer unambiguous
+6. Translation MUST be in ${userLang}
+
+For each word, create:
+- A ${langName} sentence with specific context where ONLY the target word fits
+- The correct answer (the target word)
+- 2 wrong options (words from DIFFERENT categories that don't fit the context)
+
+Return ONLY this JSON format:
+[{"sentence":"私は毎日____を食べます。","answer":"りんご","options":["りんご","走る","青い"],"translation":"${exampleTranslation}"}]`;
+
+    try {
+      let text = '';
+      if (aiConfig.provider === 'gemini') {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model || 'gemini-2.0-flash'}:generateContent?key=${aiConfig.apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+        const data = await res.json();
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        let endpoint = aiConfig.endpoint || 'https://api.openai.com/v1';
+        if (!endpoint.includes('/chat/completions')) endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+        const res = await fetch(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.apiKey}` },
+          body: JSON.stringify({ model: aiConfig.model || 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }] })
+        });
+        const data = await res.json();
+        text = data.choices?.[0]?.message?.content || '';
+      }
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        setQuestions(parsed.map(q => ({ ...q, options: shuffleArray(q.options) })));
+      }
+    } catch (e) {
+      console.error('Fill blank generation failed:', e);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    generateQuestions();
+  }, []);
+
+  const handleSelect = (option) => {
+    if (selectedOption) return;
+    setSelectedOption(option);
+    const correct = option === questions[currentIndex].answer;
+    setIsCorrect(correct);
+    if (correct) {
+      setScore(s => s + 20);
+      addXp(10);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(c => c + 1);
+      setSelectedOption(null);
+      setIsCorrect(null);
+    } else {
+      setIsCompleted(true);
+      addLog('fillblank', 'Fill Blank Practice', score + (isCorrect ? 20 : 0));
+      updateGoal('quiz');
+    }
+  };
+
+  if (!aiConfig?.enabled || !aiConfig?.apiKey) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full animate-fade-in text-center p-8">
+        <Bot size={64} className="text-gray-300 dark:text-gray-600 mb-4" />
+        <h2 className="text-xl font-bold text-gray-600 dark:text-gray-300 mb-2">{t.fillBlankNeedsAI}</h2>
+        <button onClick={onFinish} className="mt-6 px-6 py-3 bg-blue-500 text-white rounded-xl font-bold">{t.close}</button>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full animate-fade-in">
+        <CloudLightning size={48} className="text-blue-400 animate-bounce mb-4" />
+        <p className="text-gray-500 dark:text-gray-400 font-bold">{t.fillBlankGenerating}</p>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full animate-fade-in text-center p-8">
+        <X size={64} className="text-red-300 mb-4" />
+        <h2 className="text-xl font-bold text-gray-600 dark:text-gray-300 mb-2">Generation failed</h2>
+        <button onClick={onFinish} className="mt-6 px-6 py-3 bg-blue-500 text-white rounded-xl font-bold">{t.close}</button>
+      </div>
+    );
+  }
+
+  if (isCompleted) {
+    const finalScore = score;
+    return (
+      <div className="flex flex-col items-center justify-center h-full animate-scale-up px-4">
+        <GlassCard className="!p-8 flex flex-col items-center w-full max-w-sm !bg-white/80 dark:!bg-gray-800/90">
+          <Trophy size={64} className="text-yellow-500 mb-4" fill="currentColor" />
+          <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{t.fillBlankFinish}</h2>
+          <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-6">{finalScore}</div>
+          <button onClick={onFinish} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-4 px-8 rounded-2xl shadow-xl">
+            {t.close}
+          </button>
+        </GlassCard>
+      </div>
+    );
+  }
+
+  const currentQ = questions[currentIndex];
+
+  return (
+    <div className="flex flex-col h-full animate-fade-in pb-20 pt-4 px-2">
+      <div className="flex justify-between items-center mb-6">
+        <button onClick={onFinish} className="p-2 bg-white/40 dark:bg-gray-800/40 rounded-full hover:bg-white dark:hover:bg-gray-700"><X size={24} className="text-gray-700 dark:text-gray-300" /></button>
+        <div className="flex flex-col items-center">
+          <h3 className="font-bold text-gray-600 dark:text-gray-300 mb-2">{t.fillBlankTitle}</h3>
+          <div className="flex space-x-1">{questions.map((_, i) => <div key={i} className={`h-1.5 w-6 rounded-full transition-all ${i === currentIndex ? 'bg-blue-500' : i < currentIndex ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-700'}`}></div>)}</div>
+        </div>
+        <div className="font-black text-blue-600 dark:text-blue-400">{score}</div>
+      </div>
+
+      <div className="flex-1 flex flex-col justify-center items-center">
+        <GlassCard className="w-full mb-6 !p-6 !bg-white/80 dark:!bg-gray-800/80">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-3 text-center">{t.fillBlankInstruction}</p>
+          <p className="text-2xl font-bold text-gray-800 dark:text-white text-center leading-relaxed mb-4">
+            {currentQ.sentence.split('____').map((part, i, arr) => (
+              <span key={i}>
+                {part}
+                {i < arr.length - 1 && (
+                  <span className={`inline-block min-w-[60px] mx-1 px-3 py-1 rounded-lg border-2 border-dashed ${selectedOption ? (isCorrect ? 'border-green-400 bg-green-100 dark:bg-green-900/30' : 'border-red-400 bg-red-100 dark:bg-red-900/30') : 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'}`}>
+                    {selectedOption || '?'}
+                  </span>
+                )}
+              </span>
+            ))}
+          </p>
+          {selectedOption && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">{currentQ.translation}</p>
+          )}
+        </GlassCard>
+
+        {selectedOption && (
+          <div className={`mb-4 px-4 py-2 rounded-full font-bold ${isCorrect ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300'}`}>
+            {isCorrect ? t.fillBlankCorrect : t.fillBlankWrong}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3 w-full max-w-md">
+          {currentQ.options.map((opt, i) => {
+            let stateClass = "bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-700/80 border-transparent text-gray-700 dark:text-gray-200";
+            if (selectedOption) {
+              if (opt === currentQ.answer) stateClass = "bg-green-100 dark:bg-green-900/50 border-green-400 text-green-700 dark:text-green-200";
+              else if (opt === selectedOption) stateClass = "bg-red-100 dark:bg-red-900/50 border-red-400 text-red-700 dark:text-red-200 animate-shake";
+              else stateClass = "opacity-50";
+            }
+            return (
+              <button key={i} onClick={() => handleSelect(opt)} disabled={!!selectedOption} className={`p-4 rounded-2xl border-2 font-bold text-center text-lg transition-all ${stateClass}`}>
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+
+        {selectedOption && (
+          <button onClick={handleNext} className="mt-6 w-full max-w-md bg-gray-900 dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg shadow-xl active:scale-95 transition-all flex items-center justify-center">
+            {currentIndex < questions.length - 1 ? t.fillBlankNext : t.claimReward} <ChevronRight size={20} className="ml-1" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -1894,13 +2260,26 @@ export default function App() {
                     <div className="w-14 h-14 bg-purple-100/80 dark:bg-purple-900/50 rounded-2xl flex items-center justify-center text-purple-500 dark:text-purple-300 mb-2 group-hover:rotate-12 transition-transform shadow-sm"><Gamepad2 size={28} /></div>
                     <div><h3 className="text-xl font-black text-gray-800 dark:text-white leading-tight">{t.modeMatching}</h3><p className="text-gray-400 dark:text-gray-500 text-xs mt-1 font-bold">{t.modeMatchingDesc}</p></div>
                   </div>
-                  <div onClick={() => { setPracticeMode('quiz'); }} className="col-span-2 md:col-span-1 bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-[2rem] shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 hover:scale-[1.01] transition-all cursor-pointer group relative overflow-hidden flex flex-col justify-center md:justify-between h-auto md:h-56">
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div className="flex items-center justify-between md:flex-col md:items-start relative z-10 h-full">
-                      <div className="flex items-center md:flex-col md:items-start space-x-4 md:space-x-0 md:space-y-4"><div className="p-3 bg-white/20 rounded-full text-white backdrop-blur-sm"><CheckCircle fill="currentColor" size={28} /></div><div className="text-white"><h3 className="font-black text-2xl">{t.modeQuiz}</h3><p className="text-indigo-100 text-sm font-medium">{t.modeQuizDesc}</p></div></div>
-                      <ChevronRight className="text-white/70 md:self-end" size={28} />
-                    </div>
+                  <div onClick={() => { setPracticeMode('quiz'); }} className="bg-white/60 dark:bg-gray-800/50 backdrop-blur-xl p-5 rounded-[2rem] shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group border border-white/60 dark:border-white/10 relative overflow-hidden flex flex-col justify-between h-48 md:h-56">
+                    <div className="absolute -right-4 -top-4 opacity-5 text-8xl group-hover:scale-110 transition-transform">📝</div>
+                    <div className="w-14 h-14 bg-indigo-100/80 dark:bg-indigo-900/50 rounded-2xl flex items-center justify-center text-indigo-500 dark:text-indigo-300 mb-2 group-hover:rotate-12 transition-transform shadow-sm"><CheckCircle size={28} /></div>
+                    <div><h3 className="text-xl font-black text-gray-800 dark:text-white leading-tight">{t.modeQuiz}</h3><p className="text-gray-400 dark:text-gray-500 text-xs mt-1 font-bold">{t.modeQuizDesc}</p></div>
                   </div>
+                  {aiConfig?.enabled && aiConfig?.apiKey && (
+                    <div onClick={() => { setPracticeMode('fillblank'); }} className="col-span-2 md:col-span-3 bg-gradient-to-r from-amber-500 to-orange-600 p-6 rounded-[2rem] shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.01] transition-all cursor-pointer group relative overflow-hidden flex flex-col justify-center h-auto">
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-center space-x-4">
+                          <div className="p-3 bg-white/20 rounded-full text-white backdrop-blur-sm"><PenTool size={28} /></div>
+                          <div className="text-white">
+                            <div className="flex items-center gap-2"><h3 className="font-black text-2xl">{t.modeFillBlank}</h3><span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">AI</span></div>
+                            <p className="text-orange-100 text-sm font-medium">{t.modeFillBlankDesc}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="text-white/70" size={28} />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {(user.mistakes?.length > 0) && (
                   <div onClick={() => setPracticeMode('mistake')} className="bg-red-50/60 dark:bg-red-900/20 backdrop-blur-xl p-6 rounded-[2rem] border border-red-100 dark:border-red-800 cursor-pointer flex items-center justify-between hover:bg-red-100/80 dark:hover:bg-red-900/30 transition-colors mb-4">
@@ -1919,10 +2298,11 @@ export default function App() {
         )}
         {practiceMode && (
           <div className="h-full">
-            {practiceMode === 'mistake' && <MistakeView t={t} isZh={isZh} vocabList={currentVocabList} userMistakes={user.mistakes || []} removeMistake={removeMistake} onFinish={() => setPracticeMode(null)} />}
+            {practiceMode === 'mistake' && <MistakeView t={t} isZh={isZh} vocabList={currentVocabList} userMistakes={user.mistakes || []} removeMistake={removeMistake} onFinish={() => setPracticeMode(null)} aiConfig={aiConfig} targetLang={targetLang} />}
             {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} />}
-            {practiceMode === 'matching' && <MatchingGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); addXp(20); }} addLog={addLog} addMistake={addMistake} updateGoal={updateGoal} />}
+            {practiceMode === 'matching' && <MatchingGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); addXp(20); }} addLog={addLog} addMistake={addMistake} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} />}
             {practiceMode === 'quiz' && <QuizView t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} praisePhrases={DATA[targetLang].PRAISE_PHRASES} addMistake={addMistake} updateGoal={updateGoal} user={user} toggleFavorite={toggleFav} aiConfig={aiConfig} targetLang={targetLang} />}
+            {practiceMode === 'fillblank' && <FillBlankGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} aiConfig={aiConfig} targetLang={targetLang} updateGoal={updateGoal} />}
           </div>
         )}
       </main>
