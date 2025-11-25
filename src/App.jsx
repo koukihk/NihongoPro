@@ -4,8 +4,9 @@ import {
   Volume2, Globe, Edit3, X, Zap, Trophy,
   Sparkles, Heart, CheckCircle, Star as StarIcon,
   Sun, Moon, Wifi, WifiOff, CloudLightning, PenLine, Palette, History, Clock, Github, Quote, ArrowRight,
-  Languages, Target, Download, Share2, Bot, Settings, Eye, EyeOff, Shield, Lightbulb, RefreshCw, PenTool
+  Languages, Target, Download, Upload, Share2, Bot, Settings, Eye, EyeOff, Shield, Lightbulb, RefreshCw, PenTool
 } from 'lucide-react';
+import JSZip from 'jszip';
 import * as jaData from './data/ja';
 import * as koData from './data/ko';
 import { TRANSLATIONS } from './data/translations';
@@ -854,14 +855,14 @@ const KanaView = ({ t, openCanvas, data, targetLang }) => {
         <button onClick={() => setTab('hiragana')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${tab === 'hiragana' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'}`}>{t[data.LABELS.tab1_sub1Key]}</button>
         <button onClick={() => setTab('katakana')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${tab === 'katakana' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'}`}>{t[data.LABELS.tab1_sub2Key]}</button>
       </div>
-      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4 px-2">
+      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3 md:gap-4 px-2">
         {ALPHABET_DATA.map((item, index) => {
-          const char = tab === 'hiragana' ? item.h : item.k; // Changed from 'mode' to 'tab'
+          const char = tab === 'hiragana' ? item.h : item.k;
           const label = t[data.LABELS[tab === 'hiragana' ? 'tab1_sub1Key' : 'tab1_sub2Key']];
           return (
-            <GlassCard key={index} onClick={() => { speak(char); openCanvas({ char, label }); }} className="aspect-square flex flex-col relative group !p-2 !rounded-3xl hover:-translate-y-1 hover:border-blue-300/50 dark:hover:border-blue-500/30">
-              <div className="flex-1 flex items-center justify-center pt-2"><span className="text-3xl md:text-4xl font-medium text-gray-800 dark:text-white group-hover:scale-110 transition-transform duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">{char}</span></div>
-              <div className="pb-1.5 w-full text-center"><span className="text-[10px] md:text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{item.r}</span></div>
+            <GlassCard key={index} onClick={() => { speak(char); openCanvas({ char, label }); }} className="aspect-square flex flex-col group !p-1 sm:!p-2 !rounded-2xl sm:!rounded-3xl hover:-translate-y-1 hover:border-blue-300/50 dark:hover:border-blue-500/30">
+              <div className="flex-1 flex items-center justify-center pt-1"><span className="text-2xl sm:text-3xl md:text-4xl font-medium text-gray-800 dark:text-white group-hover:scale-105 transition-transform duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">{char}</span></div>
+              <div className="pb-1 sm:pb-1.5 w-full text-center"><span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider sm:tracking-widest">{item.r}</span></div>
             </GlassCard>
           )
         })}
@@ -909,7 +910,7 @@ const DailyGoalsCard = ({ t, goals, onClaim }) => {
   );
 };
 
-const ProfileView = ({ t, isZh, toggleLang, user, updateUser, theme, toggleTheme, onlineMode, toggleOnlineMode, logs, targetLang, setTargetLang, claimGoal, onResetRequest, aiConfig, onAISettingsOpen, onPrivacyOpen }) => {
+const ProfileView = ({ t, isZh, toggleLang, user, updateUser, theme, toggleTheme, onlineMode, toggleOnlineMode, logs, targetLang, setTargetLang, claimGoal, onResetRequest, aiConfig, onAISettingsOpen, onPrivacyOpen, onExportData, onImportData }) => {
   const { level, progress, nextXp } = getLevelInfo(user.xp);
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -1056,6 +1057,17 @@ Format exactly like this (no extra text):
         </button>
       </div>
       <div className="px-4 flex flex-col gap-4">
+        {/* 数据备份 */}
+        <div className="flex gap-3">
+          <button onClick={onExportData} className="flex-1 flex items-center justify-center p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl hover:bg-blue-100/80 dark:hover:bg-blue-900/40 transition-all border border-blue-100 dark:border-blue-900/30 backdrop-blur-md group active:scale-[0.98]">
+            <Download size={18} className="mr-2 text-blue-500 dark:text-blue-400" /><span className="font-bold text-blue-600 dark:text-blue-400 text-sm">{t.exportData}</span>
+          </button>
+          <label className="flex-1 flex items-center justify-center p-4 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-2xl hover:bg-indigo-100/80 dark:hover:bg-indigo-900/40 transition-all border border-indigo-100 dark:border-indigo-900/30 backdrop-blur-md group active:scale-[0.98] cursor-pointer">
+            <Upload size={18} className="mr-2 text-indigo-500 dark:text-indigo-400" /><span className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">{t.importData}</span>
+            <input type="file" accept=".zip" onChange={onImportData} className="hidden" />
+          </label>
+        </div>
+
         <button onClick={onPrivacyOpen} className="w-full flex items-center justify-center p-5 bg-green-50/50 dark:bg-green-900/20 rounded-3xl hover:bg-green-100/80 dark:hover:bg-green-900/40 transition-all border border-green-100 dark:border-green-900/30 backdrop-blur-md group active:scale-[0.98]">
           <Shield size={20} className="mr-2 text-green-500 dark:text-green-400" /><span className="font-bold text-green-600 dark:text-green-400">{t.privacyPolicy}</span>
         </button>
@@ -1828,7 +1840,36 @@ Return ONLY this JSON format:
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        setQuestions(parsed.map(q => ({ ...q, options: shuffleArray(q.options) })));
+        // 处理每个问题，确保格式正确
+        const validQuestions = parsed.map(q => {
+          let sentence = q.sentence || '';
+          const answer = q.answer || '';
+          let opts = q.options || [];
+          
+          // 兜底：如果句子没有填空标记 ____，尝试用答案替换
+          if (!sentence.includes('____') && answer) {
+            // 尝试把答案替换成 ____
+            if (sentence.includes(answer)) {
+              sentence = sentence.replace(answer, '____');
+            } else {
+              // 如果句子中也没有答案，跳过这个问题
+              return null;
+            }
+          }
+          
+          // 确保 options 中包含正确答案
+          if (!opts.includes(answer)) {
+            opts = [answer, ...opts.slice(0, 2)];
+          }
+          // 确保只有3个选项
+          opts = opts.slice(0, 3);
+          
+          return { ...q, sentence, options: shuffleArray(opts) };
+        }).filter(q => q !== null && q.sentence.includes('____'));
+        
+        if (validQuestions.length > 0) {
+          setQuestions(validQuestions);
+        }
       }
     } catch (e) {
       console.error('Fill blank generation failed:', e);
@@ -2336,6 +2377,59 @@ export default function App() {
     localStorage.setItem('kawaii_study_logs', JSON.stringify(updatedLogs));
   }
 
+  // 导出数据为 ZIP
+  const exportData = async () => {
+    const zip = new JSZip();
+    const exportData = {
+      user: user,
+      logs: logs,
+      settings: {
+        lang: lang,
+        targetLang: targetLang,
+        theme: theme,
+        onlineMode: onlineMode,
+        aiConfig: aiConfig
+      },
+      exportDate: new Date().toISOString(),
+      version: '1.0'
+    };
+    zip.file('kawaii_backup.json', JSON.stringify(exportData, null, 2));
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kawaii_backup_${new Date().toISOString().slice(0, 10)}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(t.exportSuccess);
+  };
+
+  // 导入 ZIP 数据
+  const importData = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const zip = await JSZip.loadAsync(file);
+      const jsonFile = zip.file('kawaii_backup.json');
+      if (!jsonFile) throw new Error('Invalid backup file');
+      const content = await jsonFile.async('string');
+      const data = JSON.parse(content);
+      if (data.user) { saveUser(data.user); }
+      if (data.logs) { setLogs(data.logs); localStorage.setItem('kawaii_study_logs', JSON.stringify(data.logs)); }
+      if (data.settings) {
+        if (data.settings.lang) { setLang(data.settings.lang); localStorage.setItem('kawaii_lang', data.settings.lang); }
+        if (data.settings.targetLang) { setTargetLang(data.settings.targetLang); localStorage.setItem('kawaii_target_lang', data.settings.targetLang); }
+        if (data.settings.theme) { setTheme(data.settings.theme); }
+        if (data.settings.onlineMode !== undefined) { setOnlineMode(data.settings.onlineMode); localStorage.setItem('kawaii_online_mode', String(data.settings.onlineMode)); }
+        if (data.settings.aiConfig) { setAIConfig(data.settings.aiConfig); localStorage.setItem('kawaii_ai_config', JSON.stringify(data.settings.aiConfig)); }
+      }
+      showToast(t.importSuccess);
+    } catch (err) {
+      showToast(t.importFail);
+    }
+    e.target.value = '';
+  };
+
   if (!user) return null;
 
   return (
@@ -2432,7 +2526,7 @@ export default function App() {
                 {(user.favorites?.length > 0) && (<div onClick={() => { setPracticeMode('flashcards'); setFilterFavs(true); }} className="bg-pink-50/60 dark:bg-pink-900/20 backdrop-blur-xl p-6 rounded-[2rem] border border-pink-100 dark:border-pink-800 cursor-pointer flex items-center justify-between hover:bg-pink-100/80 dark:hover:bg-pink-900/30 transition-colors mt-4"><div className="flex items-center space-x-4"><div className="p-3 bg-pink-200 dark:bg-pink-800 text-pink-600 dark:text-pink-200 rounded-full"><Heart fill="currentColor" size={24} /></div><div><h3 className="font-bold text-pink-900 dark:text-pink-100 text-lg">{t.onlyFavorites}</h3><p className="text-xs text-pink-600 dark:text-pink-300 font-bold">{user.favorites.length} words</p></div></div><ChevronRight className="text-pink-300" /></div>)}
               </div>
             )}
-            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { setLang(l => l === 'zh' ? 'en' : 'zh'); localStorage.setItem('kawaii_lang', l === 'zh' ? 'en' : 'zh') }} user={user} updateUser={saveUser} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} claimGoal={claimGoalReward} onResetRequest={() => setShowResetModal(true)} aiConfig={aiConfig} onAISettingsOpen={() => setShowAISettings(true)} onPrivacyOpen={() => setShowPrivacy(true)} />}
+            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { setLang(l => l === 'zh' ? 'en' : 'zh'); localStorage.setItem('kawaii_lang', l === 'zh' ? 'en' : 'zh') }} user={user} updateUser={saveUser} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} claimGoal={claimGoalReward} onResetRequest={() => setShowResetModal(true)} aiConfig={aiConfig} onAISettingsOpen={() => setShowAISettings(true)} onPrivacyOpen={() => setShowPrivacy(true)} onExportData={exportData} onImportData={importData} />}
           </div>
         )}
         {practiceMode && (

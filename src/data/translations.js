@@ -165,6 +165,13 @@ export const TRANSLATIONS = {
         guideStart: '开始学习',
         guideSkip: '跳过引导',
         interfaceLang: '界面语言',
+        // 数据导出导入
+        exportData: '导出数据',
+        importData: '导入数据',
+        exportSuccess: '数据已导出',
+        importSuccess: '数据已导入',
+        importFail: '导入失败，文件格式错误',
+        backupData: '数据备份',
     },
     en: {
         appTitle: 'Nihongo Start',
@@ -332,5 +339,12 @@ export const TRANSLATIONS = {
         guideStart: 'Start Learning',
         guideSkip: 'Skip Guide',
         interfaceLang: 'Interface',
+        // Data Export/Import
+        exportData: 'Export Data',
+        importData: 'Import Data',
+        exportSuccess: 'Data exported',
+        importSuccess: 'Data imported',
+        importFail: 'Import failed, invalid file',
+        backupData: 'Backup',
     }
 };
