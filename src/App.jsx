@@ -701,6 +701,8 @@ const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, 
   const [isCompleted, setIsCompleted] = useState(false);
   const scoreRef = useRef(0);
 
+  const [quizMode, setQuizMode] = useState('visual'); // 'visual' | 'audio'
+
   useEffect(() => {
     if (!vocabList || vocabList.length === 0) return;
     const qList = [];
@@ -722,6 +724,13 @@ const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, 
       speak(phrase);
     }
   }, [isCompleted, praisePhrases]);
+
+  useEffect(() => {
+    if (quizMode === 'audio' && questions[currentIndex] && !isCompleted) {
+      const timer = setTimeout(() => speak(questions[currentIndex].answer.kana || questions[currentIndex].answer.ja), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentIndex, quizMode, questions, isCompleted]);
 
   const handleSelect = (option) => {
     if (selectedOption) return;
@@ -770,14 +779,33 @@ const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, 
     <div className="flex flex-col h-full animate-fade-in pb-20 pt-4 px-2">
       <div className="flex justify-between items-center mb-6">
         <button onClick={onFinish} className="p-2 bg-white/40 dark:bg-gray-800/40 rounded-full hover:bg-white dark:hover:bg-gray-700"><X size={24} className="text-gray-700 dark:text-gray-300" /></button>
-        <div className="flex flex-col items-center"><h3 className="font-bold text-gray-600 dark:text-gray-300">{t.quizTitle}</h3><div className="flex space-x-1 mt-1">{questions.map((_, i) => <div key={i} className={`h-1.5 w-6 rounded-full transition-all ${i === currentIndex ? 'bg-blue-500' : i < currentIndex ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-700'}`}></div>)}</div></div>
+        <div className="flex flex-col items-center">
+          <h3 className="font-bold text-gray-600 dark:text-gray-300 mb-2">{t.quizTitle}</h3>
+          <div className="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-xl mb-2">
+            <button onClick={() => setQuizMode('visual')} className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${quizMode === 'visual' ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}>
+              <Languages size={14} /> Visual
+            </button>
+            <button onClick={() => setQuizMode('audio')} className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${quizMode === 'audio' ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}>
+              <Volume2 size={14} /> Audio
+            </button>
+          </div>
+          <div className="flex space-x-1">{questions.map((_, i) => <div key={i} className={`h-1.5 w-6 rounded-full transition-all ${i === currentIndex ? 'bg-blue-500' : i < currentIndex ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-700'}`}></div>)}</div>
+        </div>
         <div className="font-black text-blue-600 dark:text-blue-400">{score}</div>
       </div>
       <div className="flex-1 flex flex-col justify-center items-center">
         {combo > 1 && <div className="text-yellow-500 font-black text-xl animate-bounce mb-4 drop-shadow-sm">🔥 {combo} Combo!</div>}
         <GlassCard className="w-full mb-8 flex flex-col items-center justify-center py-12 !bg-white/80 dark:!bg-gray-800/80">
-          <h2 className="text-6xl font-medium text-gray-800 dark:text-white mb-2">{currentQ.answer.ja}</h2>
-          <p className="text-gray-400 dark:text-gray-500">{currentQ.answer.ro}</p>
+          {quizMode === 'visual' ? (
+            <>
+              <h2 className="text-6xl font-medium text-gray-800 dark:text-white mb-2">{currentQ.answer.ja}</h2>
+              <p className="text-gray-400 dark:text-gray-500">{currentQ.answer.ro}</p>
+            </>
+          ) : (
+            <button onClick={() => speak(currentQ.answer.kana || currentQ.answer.ja)} className="p-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 hover:scale-110 transition-transform animate-pulse-slow">
+              <Volume2 size={64} />
+            </button>
+          )}
         </GlassCard>
         <div className="grid grid-cols-1 gap-3 w-full max-w-md">
           {currentQ.options.map((opt, i) => {
@@ -972,8 +1000,12 @@ const Onboarding = ({ t, onComplete }) => {
 export default function App() {
   const [activeTab, setActiveTab] = useState('kana');
   const [lang, setLang] = useState('zh');
-  const [targetLang, setTargetLang] = useState('ja');
-  const [theme, setTheme] = useState('light');
+  const [targetLang, setTargetLang] = useState(() => localStorage.getItem('kawaii_target_lang') || 'ja');
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('kawaii_theme');
+    if (saved) return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
   const [user, setUser] = useState(null);
   const [drawingChar, setDrawingChar] = useState(null);
   const [practiceMode, setPracticeMode] = useState(null);
@@ -1001,16 +1033,9 @@ export default function App() {
   useEffect(() => {
     const savedUser = localStorage.getItem('kawaii_user_v1');
     const savedLang = localStorage.getItem('kawaii_lang');
-    const savedTheme = localStorage.getItem('kawaii_theme');
     const savedLogs = localStorage.getItem('kawaii_study_logs');
 
     if (savedLang) setLang(savedLang);
-
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
-    }
 
     if (savedLogs) {
       setLogs(JSON.parse(savedLogs));
@@ -1062,6 +1087,10 @@ export default function App() {
     }
     localStorage.setItem('kawaii_theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('kawaii_target_lang', targetLang);
+  }, [targetLang]);
 
   useFavicon(user && user.avatarId ? AVATARS.find(a => a.id === user.avatarId)?.icon || '🐱' : '🌸');
 
