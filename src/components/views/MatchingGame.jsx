@@ -3,8 +3,9 @@
  * A memory matching game for vocabulary practice
  */
 
-import React, { useState, useEffect } from 'react';
-import { X, CloudLightning } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, CloudLightning, Trophy } from 'lucide-react';
+import { GlassCard } from '../ui';
 import { speak, shuffleArray } from '../../utils/helpers';
 
 const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake, updateGoal, aiConfig, targetLang }) => {
@@ -13,6 +14,8 @@ const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake,
   const [matched, setMatched] = useState([]);
   const [isChecking, setIsChecking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [score, setScore] = useState(0);
 
   const generateAIVocab = async () => {
     if (!aiConfig?.enabled || !aiConfig?.apiKey) return null;
@@ -78,19 +81,31 @@ Mix different categories (food, animals, verbs, adjectives). Keep words simple f
           setMatched(newMatched);
           setSelected([]);
           setIsChecking(false);
-          addXp(15);
+          setScore(s => s + 15);
           if (newMatched.length === cards.length / 2) {
-            addLog('matching', 'Matching Practice', 100);
+            // 游戏完成，显示完成界面
+            setIsCompleted(true);
             updateGoal('matching');
-            setTimeout(onFinish, 1000);
           }
         }, 400);
       } else {
         setTimeout(() => { setSelected([]); setIsChecking(false); }, 800);
-        addMistake(newSelected[0].vocabId);
-        addMistake(newSelected[1].vocabId);
+        // 只有非 AI 生成的词汇才添加到错题本（AI 生成的 id 以 'ai' 开头）
+        if (!String(newSelected[0].vocabId).startsWith('ai')) {
+          addMistake(newSelected[0].vocabId);
+        }
+        if (!String(newSelected[1].vocabId).startsWith('ai')) {
+          addMistake(newSelected[1].vocabId);
+        }
       }
     }
+  };
+
+  // 处理领取奖励
+  const handleClaimReward = () => {
+    addXp(score);
+    addLog('matching', 'Matching Practice', score);
+    onFinish();
   };
 
   if (isLoading) {
@@ -102,10 +117,27 @@ Mix different categories (food, animals, verbs, adjectives). Keep words simple f
     );
   }
 
+  if (isCompleted) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full animate-scale-up px-4">
+        <GlassCard className="!p-8 w-full max-w-sm !bg-white/80 dark:!bg-gray-800/90">
+          <div className="flex flex-col items-center text-center">
+            <Trophy size={64} className="text-yellow-500 mb-4" fill="currentColor" />
+            <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{t.matchFinish || t.quizFinish}</h2>
+            <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-6">{score}</div>
+            <button onClick={handleClaimReward} className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold py-4 px-8 rounded-2xl shadow-xl">
+              {t.claimReward}
+            </button>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col animate-fade-in pb-20">
       <div className="flex justify-between items-center mb-6 px-2">
-        <button onClick={onFinish} className="p-2 bg-white/40 dark:bg-gray-800/40 rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors">
+        <button onClick={onFinish} className="p-2 bg-white/50 dark:bg-gray-800/50 rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors">
           <X size={24} className="text-gray-600 dark:text-gray-300" />
         </button>
         <div className="flex items-center gap-2">

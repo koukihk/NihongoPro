@@ -181,13 +181,15 @@ Return ONLY this JSON format:
     const finalScore = score;
     return (
       <div className="flex flex-col items-center justify-center h-full animate-scale-up px-4">
-        <GlassCard className="!p-8 flex flex-col items-center w-full max-w-sm !bg-white/80 dark:!bg-gray-800/90">
-          <Trophy size={64} className="text-yellow-500 mb-4" fill="currentColor" />
-          <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{t.fillBlankFinish}</h2>
-          <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-6">{finalScore}</div>
-          <button onClick={onFinish} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-4 px-8 rounded-2xl shadow-xl">
-            {t.close}
-          </button>
+        <GlassCard className="!p-8 w-full max-w-sm !bg-white/80 dark:!bg-gray-800/90">
+          <div className="flex flex-col items-center text-center">
+            <Trophy size={64} className="text-yellow-500 mb-4" fill="currentColor" />
+            <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{t.fillBlankFinish}</h2>
+            <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-6">{finalScore}</div>
+            <button onClick={onFinish} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-4 px-8 rounded-2xl shadow-xl">
+              {t.close}
+            </button>
+          </div>
         </GlassCard>
       </div>
     );

@@ -141,7 +141,11 @@ Mix difficulty levels. No markdown, just JSON.`;
     } else {
       setCombo(0); 
       if (navigator.vibrate) navigator.vibrate(200);
-      addMistake(questions[currentIndex].answer.id);
+      // 只有非 AI 生成的词汇才添加到错题本
+      const answerId = questions[currentIndex].answer.id;
+      if (!String(answerId).startsWith('ai')) {
+        addMistake(answerId);
+      }
     }
     setTimeout(() => {
       if (currentIndex < questions.length - 1) { 
@@ -170,19 +174,21 @@ Mix difficulty levels. No markdown, just JSON.`;
       <div className="flex flex-col items-center justify-center h-full animate-scale-up px-4">
         <div className="relative mb-8 w-full max-w-sm">
           <div className="absolute inset-0 bg-yellow-400 blur-3xl opacity-20 animate-pulse"></div>
-          <GlassCard className="!p-8 flex flex-col items-center !bg-white/80 dark:!bg-gray-800/90" shine={isPerfect}>
-            <Trophy size={64} className={`mb-4 ${isPerfect ? 'text-yellow-500 animate-bounce' : 'text-blue-500'}`} fill="currentColor" />
-            <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{isPerfect ? t.quizPerfect : t.quizFinish}</h2>
-            <div className="text-gray-500 dark:text-gray-400 font-bold mb-6">{isPerfect ? t.quizGood : t.quizKeepGoing}</div>
-            <div className="flex space-x-2 mb-6">
-              {[1, 2, 3].map(i => (
-                <StarIcon key={i} size={32} className={`${i <= stars ? 'text-yellow-400 fill-current' : 'text-gray-200 dark:text-gray-700'} transition-all duration-500`} style={{ animationDelay: `${i * 0.2}s` }} />
-              ))}
+          <GlassCard className="!p-8 !bg-white/80 dark:!bg-gray-800/90" shine={isPerfect}>
+            <div className="flex flex-col items-center text-center">
+              <Trophy size={64} className={`mb-4 ${isPerfect ? 'text-yellow-500 animate-bounce' : 'text-blue-500'}`} fill="currentColor" />
+              <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{isPerfect ? t.quizPerfect : t.quizFinish}</h2>
+              <div className="text-gray-500 dark:text-gray-400 font-bold mb-6">{isPerfect ? t.quizGood : t.quizKeepGoing}</div>
+              <div className="flex space-x-2 mb-6">
+                {[1, 2, 3].map(i => (
+                  <StarIcon key={i} size={32} className={`${i <= stars ? 'text-yellow-400 fill-current' : 'text-gray-200 dark:text-gray-700'} transition-all duration-500`} style={{ animationDelay: `${i * 0.2}s` }} />
+                ))}
+              </div>
+              <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 mb-2">{scoreRef.current}</div>
+              <button onClick={() => { addXp(scoreRef.current); addLog('quiz', 'Daily Quiz', scoreRef.current); onFinish(); }} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-4 px-8 rounded-2xl shadow-xl shadow-blue-500/30 active:scale-95 transition-all text-lg flex items-center justify-center">
+                <Zap size={20} className="mr-2 fill-current" /> {t.claimReward}
+              </button>
             </div>
-            <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 mb-2">{scoreRef.current}</div>
-            <button onClick={() => { addXp(scoreRef.current); addLog('quiz', 'Daily Quiz', scoreRef.current); onFinish(); }} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-4 px-8 rounded-2xl shadow-xl shadow-blue-500/30 active:scale-95 transition-all text-lg flex items-center justify-center">
-              <Zap size={20} className="mr-2 fill-current" /> {t.claimReward}
-            </button>
           </GlassCard>
         </div>
       </div>
