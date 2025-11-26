@@ -3,7 +3,7 @@
  * Vocabulary quiz with visual and audio modes
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Volume2, Languages, CloudLightning, Trophy, Zap, Star as StarIcon, Heart } from 'lucide-react';
 import { GlassCard } from '../ui';
 import { speak, shuffleArray } from '../../utils/helpers';
@@ -196,7 +196,7 @@ Mix difficulty levels. No markdown, just JSON.`;
   return (
     <div className="flex flex-col h-full animate-fade-in pb-20 pt-4 px-2">
       <div className="flex justify-between items-center mb-6">
-        <button onClick={onFinish} className="p-2 bg-white/40 dark:bg-gray-800/40 rounded-full hover:bg-white dark:hover:bg-gray-700">
+        <button onClick={onFinish} className="p-2 bg-white/50 dark:bg-gray-800/50 rounded-full hover:bg-white dark:hover:bg-gray-700">
           <X size={24} className="text-gray-700 dark:text-gray-300" />
         </button>
         <div className="flex flex-col items-center">

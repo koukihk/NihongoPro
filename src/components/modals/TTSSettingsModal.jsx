@@ -37,7 +37,7 @@ const IOSSelect = ({ value, onChange, options, placeholder }) => {
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       setPosition({
-        top: rect.bottom + 4,
+        top: rect.bottom + 8,
         left: rect.left,
         width: rect.width,
       });
@@ -50,7 +50,7 @@ const IOSSelect = ({ value, onChange, options, placeholder }) => {
     <div
       ref={dropdownRef}
       style={{ top: position.top, left: position.left, width: position.width }}
-      className="fixed z-[100] bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl border border-white/40 dark:border-white/10 shadow-2xl overflow-hidden animate-fade-in"
+      className="fixed z-[100] bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl border border-gray-200/80 dark:border-white/10 shadow-2xl overflow-hidden animate-fade-in"
     >
       <div className="max-h-48 overflow-y-auto ios-scrollbar py-1">
         {options.map((option) => (
@@ -78,7 +78,11 @@ const IOSSelect = ({ value, onChange, options, placeholder }) => {
         ref={buttonRef}
         type="button"
         onClick={handleToggle}
-        className="relative z-[101] w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-white/40 dark:border-white/10 text-gray-800 dark:text-white text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+        className={`relative z-[101] w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-gray-800/60 border-2 text-gray-800 dark:text-white text-sm text-left flex items-center justify-between focus:outline-none transition-all ${
+          isOpen 
+            ? 'border-blue-400 ring-2 ring-blue-400/30' 
+            : 'border-white/40 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
+        }`}
       >
         <span className={selectedOption ? '' : 'text-gray-400'}>{selectedOption?.name || placeholder}</span>
         <ChevronDown size={18} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />

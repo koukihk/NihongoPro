@@ -3,7 +3,7 @@
  * Displays hiragana/katakana characters for learning
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { GlassCard, SectionHeader } from '../ui';
 import { speak } from '../../utils/helpers';
 
@@ -40,12 +40,12 @@ const KanaView = ({ t, openCanvas, data, targetLang }) => {
               onClick={() => { speak(char); openCanvas({ char, label }); }} 
               className="aspect-square flex flex-col group !p-1 sm:!p-2 !rounded-2xl sm:!rounded-3xl hover:-translate-y-1 hover:border-blue-300/50 dark:hover:border-blue-500/30"
             >
-              <div className="flex-1 flex items-center justify-center pt-1">
+              <div className="flex-1 flex items-center justify-center pt-3 sm:pt-1">
                 <span className="text-2xl sm:text-3xl md:text-4xl font-medium text-gray-800 dark:text-white group-hover:scale-105 transition-transform duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                   {char}
                 </span>
               </div>
-              <div className="pb-1 sm:pb-1.5 w-full text-center">
+              <div className="pb-0.5 sm:pb-1.5 w-full text-center">
                 <span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider sm:tracking-widest">
                   {item.r}
                 </span>

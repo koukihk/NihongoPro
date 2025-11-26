@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * NavItem - 底部导航项组件
  * A navigation item component for the bottom navigation bar
@@ -13,9 +11,9 @@ const NavItem = ({ icon: Icon, label, active, onClick }) => (
     `}
   >
     <div className={`
-      relative p-3 rounded-2xl transition-all duration-500 ease-out mb-1
+      relative p-2.5 rounded-xl transition-all duration-500 ease-out mb-1
       ${active
-        ? 'bg-gradient-to-tr from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 -translate-y-2 scale-110'
+        ? 'bg-gradient-to-tr from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 -translate-y-1.5 scale-105'
         : 'text-gray-400 dark:text-gray-500 hover:bg-white/40 dark:hover:bg-white/10'
       }
     `}>

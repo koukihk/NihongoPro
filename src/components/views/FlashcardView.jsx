@@ -3,7 +3,7 @@
  * Displays vocabulary flashcards with AI-powered explanations
  */
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronRight, RotateCcw, Volume2, Heart, Sparkles, Lightbulb } from 'lucide-react';
 import { GlassCard } from '../ui';
 import { speak, shuffleArray } from '../../utils/helpers';
@@ -125,7 +125,7 @@ Keep it concise and helpful. No markdown formatting.`;
   return (
     <div className="flex flex-col items-center h-[85vh] pb-20 animate-fade-in relative px-2">
       <div className="w-full flex justify-between items-center mb-6">
-        <button onClick={onFinish} className="p-2 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors">
+        <button onClick={onFinish} className="p-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors">
           <ChevronRight size={24} className="rotate-180 text-gray-600 dark:text-gray-300" />
         </button>
         <div className="text-sm font-bold bg-white/30 dark:bg-black/30 backdrop-blur-md px-3 py-1 rounded-full text-gray-600 dark:text-gray-300 shadow-sm border border-white/20 dark:border-white/10">

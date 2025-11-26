@@ -1,4 +1,4 @@
-import React from 'react';
+// GlassCard Component
 
 /**
  * GlassCard - 玻璃态卡片容器组件

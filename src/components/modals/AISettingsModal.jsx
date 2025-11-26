@@ -284,7 +284,7 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
                   [config.provider === 'gemini' ? 'geminiApiKey' : 'openaiApiKey']: e.target.value
                 })}
                 placeholder="sk-... / AIza..."
-                className="w-full px-4 py-3 pr-12 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-white/40 dark:border-white/10 text-gray-800 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-4 py-3 pr-12 rounded-xl bg-white/60 dark:bg-gray-800/60 border-2 border-white/40 dark:border-white/10 text-gray-800 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
               />
               <button
                 onClick={() => setShowApiKey(!showApiKey)}
@@ -305,7 +305,7 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
                 [config.provider === 'gemini' ? 'geminiModel' : 'openaiModel']: e.target.value
               })}
               placeholder={defaultModels[config.provider]}
-              className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-white/40 dark:border-white/10 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-gray-800/60 border-2 border-white/40 dark:border-white/10 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
             />
           </div>
 
@@ -317,7 +317,7 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
                 value={currentEndpoint}
                 onChange={(e) => setConfig({ ...config, openaiEndpoint: e.target.value })}
                 placeholder={t.aiEndpointPlaceholder}
-                className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-white/40 dark:border-white/10 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-gray-800/60 border-2 border-white/40 dark:border-white/10 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
               />
             </div>
           )}

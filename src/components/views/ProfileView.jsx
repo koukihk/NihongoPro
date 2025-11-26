@@ -3,7 +3,7 @@
  * Displays user profile, settings, and daily goals
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ChevronRight, Edit3, Zap, Trophy, CheckCircle, Sun, Moon, Wifi, WifiOff,
   PenLine, History, Github, Languages, Download, Upload, Bot, RefreshCw, Shield, RotateCcw, Globe, Volume2
@@ -131,7 +131,7 @@ Format exactly like this (no extra text):
             <span className="text-gray-500 dark:text-gray-400 text-sm font-bold">{Math.floor(user.xp)} / {nextXp} XP</span>
           </div>
 
-          <div className="w-full mb-8 px-4 flex justify-center">
+          <div className="w-full mb-8 px-2 sm:px-4 flex justify-center">
             <div className="bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/30 text-center w-full p-4 backdrop-blur-sm relative">
               <p className="text-xs text-blue-500 font-bold mb-1 flex items-center justify-center uppercase tracking-widest"><span className="mr-1">✨</span> {t.quote}</p>
               {isLoadingQuote ? (
@@ -160,7 +160,7 @@ Format exactly like this (no extra text):
             </div>
           )}
           
-          <div className="flex w-full px-2 space-x-4 z-10">
+          <div className="flex w-full px-2 sm:px-4 space-x-3 sm:space-x-4 z-10">
             <div className="flex-1 bg-orange-50/60 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 p-4 rounded-3xl flex flex-col items-center hover:scale-105 transition-transform">
               <Zap size={24} className="text-orange-500 mb-2 filter drop-shadow-sm" fill="currentColor" />
               <span className="text-2xl font-black text-gray-800 dark:text-white">{user.streak}</span>
@@ -173,13 +173,13 @@ Format exactly like this (no extra text):
             </div>
           </div>
           
-          <div className="w-full mt-8 px-8 z-10">
+          <div className="w-full mt-8 px-2 sm:px-6 z-10">
             <div className="h-3 bg-gray-200/60 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
               <div className="h-full bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 rounded-full transition-all duration-1000 shadow-[0_2px_10px_rgba(99,102,241,0.5)]" style={{ width: `${progress}%` }}></div>
             </div>
           </div>
           
-          <div className="w-full px-6 mt-8 z-10">
+          <div className="w-full px-2 sm:px-4 mt-8 z-10">
             <DailyGoalsCard t={t} goals={user.dailyGoals?.goals} onClaim={claimGoal} />
           </div>
         </GlassCard>

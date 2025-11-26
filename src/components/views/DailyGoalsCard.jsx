@@ -3,7 +3,6 @@
  * Displays daily learning goals with progress tracking
  */
 
-import React from 'react';
 import { Target } from 'lucide-react';
 import { GlassCard } from '../ui';
 
@@ -30,11 +29,11 @@ const DailyGoalsCard = ({ t, goals, onClaim }) => {
             <button
               onClick={() => onClaim(g.id)}
               disabled={!g.completed || g.claimed}
-              className={`shrink-0 w-full sm:w-auto sm:min-w-[60px] px-4 py-1.5 sm:py-1.5 rounded-xl text-xs font-bold transition-all border backdrop-blur-sm ${g.claimed
-                ? 'bg-gray-200 text-gray-400 border-white/40 dark:bg-gray-800/70 dark:text-gray-500 dark:border-white/10'
+              className={`shrink-0 w-full sm:w-auto sm:min-w-[60px] px-4 py-1.5 sm:py-1.5 rounded-xl text-xs font-bold transition-all border-2 backdrop-blur-sm ${g.claimed
+                ? 'bg-gray-200 text-gray-400 border-gray-300/60 dark:bg-gray-800/70 dark:text-gray-500 dark:border-white/10'
                 : g.completed
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 animate-pulse border-transparent dark:from-green-400 dark:to-emerald-400 dark:text-gray-900'
-                  : 'bg-white/80 text-gray-500 border-white/60 dark:bg-white/10 dark:text-gray-200 dark:border-white/5'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 animate-pulse border-green-400/50 dark:from-green-400 dark:to-emerald-400 dark:text-gray-900 dark:border-green-300/50'
+                  : 'bg-white/80 text-gray-500 border-gray-200 shadow-sm dark:bg-white/10 dark:text-gray-200 dark:border-white/10'
                 }`}
             >
               {g.claimed ? t.claimed : t.claim}
