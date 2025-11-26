@@ -84,7 +84,13 @@ export default function App() {
   const currentVocabList = useMemo(() => {
     const base = DATA[targetLang].BASE_VOCAB;
     const cloud = DATA[targetLang].CLOUD_VOCAB;
-    const custom = user?.customVocab || [];
+    const custom = (user?.customVocab || []).filter(v => {
+      // 如果有 lang 字段，严格匹配
+      if (v.lang) return v.lang === targetLang;
+      // 旧数据兼容：检查是否包含韩语字符
+      const hasHangul = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(v.ja);
+      return targetLang === 'ko' ? hasHangul : !hasHangul;
+    });
     return onlineMode ? [...base, ...cloud, ...custom] : [...base, ...custom];
   }, [onlineMode, targetLang, user?.customVocab]);
 
@@ -188,6 +194,21 @@ export default function App() {
 
     saveUser(newUser);
   };
+  // 删除自定义词汇
+  const deleteCustomVocab = (id) => {
+    const customVocab = user.customVocab || [];
+    const favorites = user.favorites || [];
+    const mistakes = user.mistakes || [];
+
+    saveUser({
+      ...user,
+      customVocab: customVocab.filter(v => v.id !== id),
+      favorites: favorites.filter(f => f !== id),
+      mistakes: mistakes.filter(m => m !== id)
+    });
+    showToast(t.toastDeleted || 'Deleted');
+  };
+
   const updateGoal = (type, amount = 1) => {
     if (!user.dailyGoals) return;
     const newGoals = user.dailyGoals.goals.map(g => {
@@ -369,7 +390,7 @@ export default function App() {
         {practiceMode && (
           <div className="h-full">
             {practiceMode === 'mistake' && <MistakeView t={t} isZh={isZh} vocabList={currentVocabList} userMistakes={user.mistakes || []} removeMistake={removeMistake} onFinish={() => setPracticeMode(null)} aiConfig={aiConfig} targetLang={targetLang} />}
-            {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} addCustomVocab={addCustomVocab} isFavoritesMode={filterFavs} />}
+            {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} addCustomVocab={addCustomVocab} deleteCustomVocab={deleteCustomVocab} isFavoritesMode={filterFavs} />}
             {practiceMode === 'matching' && <MatchingGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); addXp(20); }} addLog={addLog} addMistake={addMistake} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} />}
             {practiceMode === 'quiz' && <QuizView t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} praisePhrases={DATA[targetLang].PRAISE_PHRASES} addMistake={addMistake} updateGoal={updateGoal} user={user} toggleFavorite={toggleFav} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} />}
             {practiceMode === 'fillblank' && <FillBlankGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} aiConfig={aiConfig} targetLang={targetLang} updateGoal={updateGoal} targetLevel={targetLevel} />}

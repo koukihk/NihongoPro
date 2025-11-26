@@ -196,6 +196,7 @@ Generate exactly 10 unique words. No markdown.`;
         en: currentCard.en,
         kana: currentCard.kana || currentCard.ro,
         source: 'ai',
+        lang: targetLang,
         createdAt: new Date().toISOString()
       };
 
@@ -355,7 +356,7 @@ Keep it concise and helpful. No markdown formatting.`;
           <ChevronRight size={24} className="rotate-180 text-gray-600 dark:text-gray-300" />
         </button>
         <div className="flex items-center gap-2">
-          {aiConfig?.enabled && aiConfig?.apiKey && isAICard && (
+          {aiConfig?.enabled && aiConfig?.apiKey && (isAICard || currentCard?.id?.toString().startsWith('custom_')) && (
             <span className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold">AI</span>
           )}
           <div className="text-sm font-bold bg-white/30 dark:bg-black/30 backdrop-blur-md px-3 py-1 rounded-full text-gray-600 dark:text-gray-300 shadow-sm border border-white/20 dark:border-white/10">
@@ -369,7 +370,7 @@ Keep it concise and helpful. No markdown formatting.`;
         <div onClick={() => !aiExplanation && setIsFlipped(!isFlipped)} className={`w-full h-full relative preserve-3d transition-transform duration-500 cubic-bezier(0.175, 0.885, 0.32, 1.275) cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}>
           <GlassCard className="absolute inset-0 backface-hidden flex flex-col !rounded-[2.5rem] !bg-white/80 dark:!bg-gray-800/80" shine={true}>
             <div className="flex justify-between items-start mb-4" onClick={e => e.stopPropagation()}>
-              <span className="px-3 py-1 bg-blue-100/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wider">JP</span>
+              <span className="px-3 py-1 bg-blue-100/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wider">{targetLang === 'ja' ? 'JP' : 'KR'}</span>
               <div className="flex space-x-2">
                 <button onClick={() => speak(currentCard.kana || currentCard.ja)} className="p-2.5 bg-white/50 dark:bg-gray-700/50 rounded-full text-blue-500 dark:text-blue-300 hover:scale-110 transition-transform shadow-sm"><Volume2 size={20} /></button>
                 <button
