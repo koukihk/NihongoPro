@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import {
   Grid, Layers, Gamepad2, User, ChevronRight,
   Sparkles, Heart, CheckCircle,
@@ -104,19 +104,23 @@ export default function App() {
         const yest = new Date(); yest.setDate(yest.getDate() - 1);
         parsed.streak = parsed.lastLogin === yest.toDateString() ? parsed.streak + 1 : 1;
         parsed.lastLogin = today;
-        parsed.dailyGoals = { date: today, goals: [
-          { id: 'quiz', target: 1, current: 0, completed: false },
-          { id: 'matching', target: 1, current: 0, completed: false },
-          { id: 'words', target: 5, current: 0, completed: false }
-        ]};
-        saveUser(parsed);
-      } else {
-        if (!parsed.dailyGoals || parsed.dailyGoals.date !== today) {
-          parsed.dailyGoals = { date: today, goals: [
+        parsed.dailyGoals = {
+          date: today, goals: [
             { id: 'quiz', target: 1, current: 0, completed: false },
             { id: 'matching', target: 1, current: 0, completed: false },
             { id: 'words', target: 5, current: 0, completed: false }
-          ]};
+          ]
+        };
+        saveUser(parsed);
+      } else {
+        if (!parsed.dailyGoals || parsed.dailyGoals.date !== today) {
+          parsed.dailyGoals = {
+            date: today, goals: [
+              { id: 'quiz', target: 1, current: 0, completed: false },
+              { id: 'matching', target: 1, current: 0, completed: false },
+              { id: 'words', target: 5, current: 0, completed: false }
+            ]
+          };
           saveUser(parsed);
         } else { setUser(parsed); }
       }
@@ -131,7 +135,7 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem('kawaii_target_lang', targetLang); }, [targetLang]);
   useEffect(() => { localStorage.setItem('kawaii_target_level', targetLevel); }, [targetLevel]);
-  
+
   // 当切换语言时，自动调整等级设置
   useEffect(() => {
     if (targetLang === 'ja' && targetLevel.startsWith('TOPIK')) {
@@ -148,11 +152,13 @@ export default function App() {
   const saveUser = (u) => { setUser(u); localStorage.setItem('kawaii_user_v1', JSON.stringify(u)); };
   const handleUserInit = (name, avatarId) => saveUser({
     name, avatarId, xp: 0, streak: 1, lastLogin: new Date().toDateString(), favorites: [], mistakes: [],
-    dailyGoals: { date: new Date().toDateString(), goals: [
-      { id: 'quiz', target: 1, current: 0, completed: false },
-      { id: 'matching', target: 1, current: 0, completed: false },
-      { id: 'words', target: 5, current: 0, completed: false }
-    ]}
+    dailyGoals: {
+      date: new Date().toDateString(), goals: [
+        { id: 'quiz', target: 1, current: 0, completed: false },
+        { id: 'matching', target: 1, current: 0, completed: false },
+        { id: 'words', target: 5, current: 0, completed: false }
+      ]
+    }
   });
   const addXp = (amount) => saveUser({ ...user, xp: user.xp + amount });
   const toggleFav = (id) => {
@@ -168,12 +174,19 @@ export default function App() {
     saveUser({ ...user, mistakes: mistakes.filter(m => m !== id) });
   };
   // 添加自定义词汇（用于保存 AI 生成的收藏词汇）
-  const addCustomVocab = (vocab) => {
+  const addCustomVocab = (vocab, alsoFavorite = false) => {
     const customVocab = user.customVocab || [];
-    // 检查是否已存在相同的词汇（通过 ja 字段判断）
-    if (!customVocab.find(v => v.ja === vocab.ja)) {
-      saveUser({ ...user, customVocab: [...customVocab, vocab] });
+    const favorites = user.favorites || [];
+
+    // 允许重复保存（因为 AI 可能会生成相同的词，但用户可能想在不同上下文中收藏）
+    // 且 FlashcardView 中生成的 ID 是唯一的
+    const newUser = { ...user, customVocab: [...customVocab, vocab] };
+
+    if (alsoFavorite && !favorites.includes(vocab.id)) {
+      newUser.favorites = [...favorites, vocab.id];
     }
+
+    saveUser(newUser);
   };
   const updateGoal = (type, amount = 1) => {
     if (!user.dailyGoals) return;
@@ -356,7 +369,7 @@ export default function App() {
         {practiceMode && (
           <div className="h-full">
             {practiceMode === 'mistake' && <MistakeView t={t} isZh={isZh} vocabList={currentVocabList} userMistakes={user.mistakes || []} removeMistake={removeMistake} onFinish={() => setPracticeMode(null)} aiConfig={aiConfig} targetLang={targetLang} />}
-            {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} addCustomVocab={addCustomVocab} />}
+            {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} addCustomVocab={addCustomVocab} isFavoritesMode={filterFavs} />}
             {practiceMode === 'matching' && <MatchingGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); addXp(20); }} addLog={addLog} addMistake={addMistake} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} />}
             {practiceMode === 'quiz' && <QuizView t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} praisePhrases={DATA[targetLang].PRAISE_PHRASES} addMistake={addMistake} updateGoal={updateGoal} user={user} toggleFavorite={toggleFav} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} />}
             {practiceMode === 'fillblank' && <FillBlankGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} aiConfig={aiConfig} targetLang={targetLang} updateGoal={updateGoal} targetLevel={targetLevel} />}

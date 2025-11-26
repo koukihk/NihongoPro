@@ -8,7 +8,7 @@ import { ChevronRight, RotateCcw, Volume2, Heart, Sparkles, Lightbulb, CloudLigh
 import { GlassCard } from '../ui';
 import { speak, shuffleArray } from '../../utils/helpers';
 
-const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFinish, updateGoal, aiConfig, targetLang, targetLevel, addCustomVocab }) => {
+const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFinish, updateGoal, aiConfig, targetLang, targetLevel, addCustomVocab, isFavoritesMode }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [aiExplanation, setAiExplanation] = useState(null);
@@ -18,7 +18,7 @@ const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFi
   const [cardList, setCardList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const hasInitialized = useRef(false);
-  
+
   // 主题池，用于 AI 生成
   const themePool = [
     { theme: 'daily life', hint: 'common activities, routines, household' },
@@ -36,41 +36,41 @@ const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFi
   // AI 生成词汇
   const generateAIVocab = async () => {
     if (!aiConfig?.enabled || !aiConfig?.apiKey) return null;
-    
+
     const isJapanese = targetLang === 'ja';
     const langName = isJapanese ? 'Japanese' : 'Korean';
-    
+
     // 随机选择主题
     const selectedTheme = themePool[Math.floor(Math.random() * themePool.length)];
-    
+
     // 根据用户设置的等级确定难度
     const getLevelDescription = () => {
       if (targetLevel === 'mixed') return 'mixed difficulty (include beginner to advanced words)';
       if (isJapanese) {
-        const levelMap = { 
-          N5: 'JLPT N5 (basic, high-frequency words)', 
-          N4: 'JLPT N4 (elementary, everyday vocabulary)', 
-          N3: 'JLPT N3 (intermediate, common expressions)', 
-          N2: 'JLPT N2 (upper-intermediate, abstract concepts)', 
-          N1: 'JLPT N1 (advanced, sophisticated vocabulary)' 
+        const levelMap = {
+          N5: 'JLPT N5 (basic, high-frequency words)',
+          N4: 'JLPT N4 (elementary, everyday vocabulary)',
+          N3: 'JLPT N3 (intermediate, common expressions)',
+          N2: 'JLPT N2 (upper-intermediate, abstract concepts)',
+          N1: 'JLPT N1 (advanced, sophisticated vocabulary)'
         };
         return levelMap[targetLevel] || levelMap.N5;
       } else {
-        const levelMap = { 
-          TOPIK1: 'TOPIK 1 (basic vocabulary)', 
-          TOPIK2: 'TOPIK 2 (elementary expressions)', 
-          TOPIK3: 'TOPIK 3 (intermediate vocabulary)', 
-          TOPIK4: 'TOPIK 4 (upper-intermediate)', 
-          TOPIK5: 'TOPIK 5 (advanced vocabulary)', 
-          TOPIK6: 'TOPIK 6 (proficient, academic)' 
+        const levelMap = {
+          TOPIK1: 'TOPIK 1 (basic vocabulary)',
+          TOPIK2: 'TOPIK 2 (elementary expressions)',
+          TOPIK3: 'TOPIK 3 (intermediate vocabulary)',
+          TOPIK4: 'TOPIK 4 (upper-intermediate)',
+          TOPIK5: 'TOPIK 5 (advanced vocabulary)',
+          TOPIK6: 'TOPIK 6 (proficient, academic)'
         };
         return levelMap[targetLevel] || levelMap.TOPIK1;
       }
     };
-    
+
     const levelDesc = getLevelDescription();
     const randomSeed = Math.floor(Math.random() * 10000);
-    
+
     const prompt = `Generate 10 ${langName} vocabulary words for flashcard study. Seed: ${randomSeed}
 
 THEME: ${selectedTheme.theme} (${selectedTheme.hint})
@@ -114,7 +114,7 @@ Generate exactly 10 unique words. No markdown.`;
         // 尝试修复常见的 JSON 格式错误
         // 修复 "id":"ai6":"word" 这种格式错误为 "id":"ai6","ja":"word"
         jsonStr = jsonStr.replace(/"id"\s*:\s*"([^"]+)"\s*:\s*"/g, '"id":"$1","ja":"');
-        
+
         try {
           const parsed = JSON.parse(jsonStr);
           // 验证数据格式，过滤掉无效的词汇
@@ -136,20 +136,27 @@ Generate exactly 10 unique words. No markdown.`;
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
-    
+
     const loadVocab = async () => {
       setIsLoading(true);
-      
-      // 检查是否是"只复习收藏"模式（传入的词汇都是收藏的）
+
+      // 如果是"只复习收藏"模式，直接使用传入的词汇，不调用 AI
+      if (isFavoritesMode) {
+        setCardList(shuffleArray([...vocabList]));
+        setIsLoading(false);
+        return;
+      }
+
+      // 检查是否是"只复习收藏"模式（传入的词汇都是收藏的） - 兼容旧逻辑
       const isFavoritesOnly = vocabList.length > 0 && vocabList.every(v => userFavorites.includes(v.id));
-      
+
       // 如果是"只复习收藏"模式，直接使用传入的词汇，不调用 AI
       if (isFavoritesOnly) {
         setCardList(shuffleArray([...vocabList]));
         setIsLoading(false);
         return;
       }
-      
+
       // 尝试 AI 生成
       if (aiConfig?.enabled && aiConfig?.apiKey) {
         const aiVocab = await generateAIVocab();
@@ -159,12 +166,12 @@ Generate exactly 10 unique words. No markdown.`;
           return;
         }
       }
-      
+
       // AI 失败或未启用，使用本地词库
       setCardList(shuffleArray([...vocabList]));
       setIsLoading(false);
     };
-    
+
     loadVocab();
   }, []);
 
@@ -177,7 +184,7 @@ Generate exactly 10 unique words. No markdown.`;
   // 处理收藏（包括 AI 生成的词汇）
   const handleFavorite = () => {
     if (!currentCard) return;
-    
+
     if (isAICard && !isFav) {
       // AI 词汇首次收藏：生成持久化 ID，保存到自定义词库
       const customId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -191,13 +198,14 @@ Generate exactly 10 unique words. No markdown.`;
         source: 'ai',
         createdAt: new Date().toISOString()
       };
-      
+
       // 保存到自定义词库并收藏
       if (addCustomVocab) {
-        addCustomVocab(customVocab);
-        toggleFavorite(customId);
+        // 使用原子操作同时保存词汇和收藏状态，避免 React 状态更新的竞态问题
+        addCustomVocab(customVocab, true);
+
         // 更新当前卡片的 ID，这样 UI 可以正确显示收藏状态
-        setCardList(prev => prev.map((card, idx) => 
+        setCardList(prev => prev.map((card, idx) =>
           idx === currentIndex ? { ...card, id: customId } : card
         ));
       }
@@ -318,8 +326,28 @@ Keep it concise and helpful. No markdown formatting.`;
     );
   }
 
-  if (!currentCard) return null;
-  
+  if (!currentCard) {
+    if (isFavoritesMode) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full animate-fade-in px-6 text-center">
+          <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6">
+            <Heart size={40} className="text-gray-400" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+            {isZh ? '没有找到收藏的单词' : 'No favorites found'}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-xs">
+            {isZh ? '你还没有收藏任何这个语言的单词。在学习时点击爱心图标来收藏单词。' : 'You haven\'t favorited any words in this language yet. Tap the heart icon while learning to save words.'}
+          </p>
+          <button onClick={onFinish} className="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
+            {t.back}
+          </button>
+        </div>
+      );
+    }
+    return null;
+  }
+
   return (
     <div className="flex flex-col items-center h-[85vh] pb-20 animate-fade-in relative px-2">
       <div className="w-full flex justify-between items-center mb-6">
@@ -336,7 +364,7 @@ Keep it concise and helpful. No markdown formatting.`;
         </div>
         <div className="w-10"></div>
       </div>
-      
+
       <div className="relative w-full max-w-sm flex-1 max-h-[500px] perspective-1000 group z-10">
         <div onClick={() => !aiExplanation && setIsFlipped(!isFlipped)} className={`w-full h-full relative preserve-3d transition-transform duration-500 cubic-bezier(0.175, 0.885, 0.32, 1.275) cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}>
           <GlassCard className="absolute inset-0 backface-hidden flex flex-col !rounded-[2.5rem] !bg-white/80 dark:!bg-gray-800/80" shine={true}>
@@ -344,8 +372,8 @@ Keep it concise and helpful. No markdown formatting.`;
               <span className="px-3 py-1 bg-blue-100/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wider">JP</span>
               <div className="flex space-x-2">
                 <button onClick={() => speak(currentCard.kana || currentCard.ja)} className="p-2.5 bg-white/50 dark:bg-gray-700/50 rounded-full text-blue-500 dark:text-blue-300 hover:scale-110 transition-transform shadow-sm"><Volume2 size={20} /></button>
-                <button 
-                  onClick={handleFavorite} 
+                <button
+                  onClick={handleFavorite}
                   className={`p-2.5 rounded-full transition-all hover:scale-110 shadow-sm ${isFav ? 'bg-pink-100 text-pink-500' : 'bg-white/50 dark:bg-gray-700/50 text-gray-400'}`}
                 >
                   <Heart size={20} fill={isFav ? "currentColor" : "none"} />
@@ -384,11 +412,10 @@ Keep it concise and helpful. No markdown formatting.`;
             ) : (
               <>
                 <div className="flex-1 flex flex-col items-center justify-center space-y-4 w-full overflow-hidden">
-                  <h2 className={`font-medium text-gray-800 dark:text-white text-center leading-tight px-4 w-full ${
-                    currentCard.ja.length > 8 ? 'text-3xl sm:text-4xl' : 
-                    currentCard.ja.length > 5 ? 'text-4xl sm:text-5xl' : 
-                    'text-5xl sm:text-6xl'
-                  }`}>{currentCard.ja}</h2>
+                  <h2 className={`font-medium text-gray-800 dark:text-white text-center leading-tight px-4 w-full ${currentCard.ja.length > 8 ? 'text-3xl sm:text-4xl' :
+                    currentCard.ja.length > 5 ? 'text-4xl sm:text-5xl' :
+                      'text-5xl sm:text-6xl'
+                    }`}>{currentCard.ja}</h2>
                   <p className="text-xl text-gray-400 dark:text-gray-500 font-medium tracking-wide">{currentCard.ro}</p>
                 </div>
                 <div className="mt-4 text-blue-400 text-sm font-bold flex items-center justify-center animate-bounce-slow opacity-80">
@@ -403,7 +430,7 @@ Keep it concise and helpful. No markdown formatting.`;
           </GlassCard>
         </div>
       </div>
-      
+
       <button onClick={handleNext} className="mt-8 w-full max-w-xs bg-gray-900 dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg shadow-xl shadow-gray-900/20 dark:shadow-white/10 active:scale-95 transition-all flex items-center justify-center backdrop-blur-sm group overflow-hidden relative">
         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
         <span className="relative flex items-center">{t.next} <ChevronRight size={20} className="ml-1" /></span>
