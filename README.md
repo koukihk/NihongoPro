@@ -1,4 +1,4 @@
-# 🌸 Nihongo Pro - Kawaii Language Learning
+# 🌸 Nihongo Pro - Kawaii Language Learning App
 
 ![React](https://img.shields.io/badge/React-18-blue?style=flat-square)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square)
@@ -92,18 +92,17 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the web app a
 
 ### 🤖 AI Assistant (Text Generation)
 To enable smart quizzes and explanations:
-1.  Navigate to **Profile** → **AI Assistant**.
+1.  Navigate to **Me** → **AI Assistant**.
 2.  Select your provider (**Google Gemini** or **OpenAI**).
 3.  Enter your API Key.
 
 ### 🗣️ AI Text-to-Speech (TTS)
 To enable high-quality AI voices:
-1.  Navigate to **Settings** → **TTS Settings** (Speaker icon).
-2.  Enable **Minimax TTS**.
-3.  Enter your **Minimax API Key**.
-4.  Select your preferred voice model and character.
+1.  Navigate to **Me** → **Voice** (Speaker icon).
+2.  Enter your **Minimax API Key**.
+3.  Select your preferred voice model and timbre.
 
-> 💡 **Privacy Note:** All API keys are stored securely in your browser's local storage and are never sent to our servers.
+> 💡 **Privacy Note:** All API keys are stored securely in your browser's local storage and are never sent to us.
 
 ## 📄 License
 
