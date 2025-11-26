@@ -231,18 +231,20 @@ const TTSSettingsModal = ({ t, ttsConfig, onSave, onClose, onlineMode, lang = 'z
             </div>
           )}
 
-          {/* TTS Enable Toggle */}
-          <div className="flex items-center justify-between p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-white/40 dark:border-white/10">
-            <span className="font-bold text-gray-700 dark:text-gray-200">
-              {t.ttsEnabled}
-            </span>
-            <button
-              onClick={handleToggleEnabled}
-              className={`relative w-14 h-8 rounded-full transition-all ${config.enabled ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-            >
-              <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all ${config.enabled ? 'left-7' : 'left-1'}`}></div>
-            </button>
-          </div>
+          {/* TTS Enable Toggle - only show when API Key is configured */}
+          {isMiniMaxConfigured && (
+            <div className="flex items-center justify-between p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-white/40 dark:border-white/10">
+              <span className="font-bold text-gray-700 dark:text-gray-200">
+                {t.ttsEnabled}
+              </span>
+              <button
+                onClick={handleToggleEnabled}
+                className={`relative w-14 h-8 rounded-full transition-all ${config.enabled ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+              >
+                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all ${config.enabled ? 'left-7' : 'left-1'}`}></div>
+              </button>
+            </div>
+          )}
 
           {/* MiniMax fields - always show */}
           <div>
