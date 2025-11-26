@@ -1,57 +1,48 @@
-# 🌸 Kawaii Language Learning App
+# 🌸 Nihongo Pro - Kawaii Language Learning
 
-A beautiful, gamified language learning app for Japanese and Korean beginners. Built with React and featuring AI-powered learning assistance.
+![React](https://img.shields.io/badge/React-18-blue?style=flat-square)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square)
+![Capacitor](https://img.shields.io/badge/Capacitor-Mobile-1192f5?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-![React](https://img.shields.io/badge/React-18-blue)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC)
-![License](https://img.shields.io/badge/License-MIT-green)
+> **Experience the App Live:** [**nihongo-pro.vercel.app**](https://nihongo-pro.vercel.app)
+
+A beautiful, gamified language learning application designed for Japanese and Korean beginners. Built with modern web technologies, it features a glassmorphism UI, AI-powered learning assistance, and offline capabilities.
 
 ## ✨ Features
 
 ### 📚 Core Learning
-- **Kana/Hangul Chart** - Interactive character charts with pronunciation
-- **Flashcards** - Flip cards to memorize vocabulary with favorites support
-- **Daily Quiz** - 4-choice quiz to test your knowledge
-- **Matching Game** - Match words with their meanings
-- **Mistake Notebook** - Review and master your weak points
+- **Kana/Hangul Chart**: Interactive character charts with native pronunciation audio.
+- **Flashcards**: Spaced repetition system with favorites and mistake tracking.
+- **Daily Quiz**: 4-choice quizzes to test and reinforce your vocabulary.
+- **Matching Game**: Fun, interactive game to match words with their meanings.
+- **Mistake Notebook**: Automatically tracks incorrect answers for focused review.
 
-### 🤖 AI Assistant (Optional)
-Enable AI features for enhanced learning:
-- **AI Smart Quiz** - Dynamically generated vocabulary questions
-- **AI Fill-in-the-Blank** - Complete sentences with the right word
-- **AI Memory Tips** - Fun mnemonics to help remember words
-- **AI Word Explanation** - Detailed explanations with examples
-- **AI Daily Quote** - Fresh inspirational sentences every day
-- **AI Matching Game** - AI-generated vocabulary pairs
+### 🤖 AI Assistant
+Supercharge your learning with optional AI features (powered by Gemini/OpenAI):
+- **Smart Quiz**: Dynamically generated questions based on your learning history.
+- **Contextual Explanations**: Deep dive into word nuances and usage examples.
+- **Memory Mnemonics**: AI-generated tips to help you remember difficult words.
+- **Daily Quotes**: Inspirational sentences in your target language.
 
-Supports **Google Gemini** and **OpenAI-compatible** APIs.
-
-### 🎮 Gamification
-- XP and leveling system
-- Daily streak tracking
-- Daily goals with rewards
-- Study history and statistics
-
-### 🎨 User Experience
-- Beautiful glassmorphism UI design
-- Dark/Light theme support
-- Chinese/English interface
-- Japanese/Korean target language
-- Offline-first with local storage
-- Mobile-friendly responsive design
+### 🎮 Gamification & UX
+- **Progression System**: Earn XP, level up, and maintain daily streaks.
+- **Premium UI**: Modern glassmorphism design with dark/light mode support.
+- **Offline First**: All progress is saved locally; learn anywhere, anytime.
+- **Multi-language**: Supports English and Chinese interfaces.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 16+
+- Node.js 18+
 - npm or yarn
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/koukihk/kawaii-learning.git
-cd kawaii-learning
+git clone https://github.com/koukihk/nihongo-pro.git
+cd nihongo-pro
 
 # Install dependencies
 npm install
@@ -66,51 +57,54 @@ npm run dev
 npm run build
 ```
 
+## 📱 Mobile App (Android)
+
+This project uses [Capacitor](https://capacitorjs.com/) to package the web app as a native Android application.
+
+### Prerequisites
+- **Android Studio**: Required to build and run the Android app.
+- **Java Development Kit (JDK) 17**: Required for Android builds.
+
+### Building the APK
+
+1.  **Build the web assets:**
+    ```bash
+    npm run build
+    ```
+
+2.  **Sync with Android project:**
+    This copies your built web assets to the native Android project.
+    ```bash
+    npx cap sync android
+    ```
+
+3.  **Open in Android Studio:**
+    ```bash
+    npx cap open android
+    ```
+
+4.  **Build APK in Android Studio:**
+    - Wait for Gradle sync to complete.
+    - Go to **Build** > **Build Bundle(s) / APK(s)** > **Build APK(s)**.
+    - Once finished, the APK will be available in `android/app/build/outputs/apk/debug/`.
+
 ## 🔧 AI Configuration
 
-To enable AI features:
+### 🤖 AI Assistant (Text Generation)
+To enable smart quizzes and explanations:
+1.  Navigate to **Profile** → **AI Assistant**.
+2.  Select your provider (**Google Gemini** or **OpenAI**).
+3.  Enter your API Key.
 
-1. Go to **Profile** → **AI Assistant**
-2. Choose your provider (Gemini or OpenAI)
-3. Enter your API key
-4. (Optional) Customize model name and endpoint
-5. Save and enable
+### 🗣️ AI Text-to-Speech (TTS)
+To enable high-quality AI voices:
+1.  Navigate to **Settings** → **TTS Settings** (Speaker icon).
+2.  Enable **Minimax TTS**.
+3.  Enter your **Minimax API Key**.
+4.  Select your preferred voice model and character.
 
-**Supported Providers:**
-- Google Gemini (default: `gemini-2.0-flash`)
-- OpenAI and compatible APIs (default: `gpt-4o-mini`)
-
-> 💡 Your API key is stored locally and never sent to our servers.
-
-## 🔒 Privacy
-
-- All learning data is stored locally in your browser
-- No analytics or tracking
-- AI queries are sent directly to your configured provider
-- See the in-app Privacy Policy for details
-
-## 📱 Screenshots
-
-| Home | Practice | Profile |
-|------|----------|---------|
-| Kana chart with writing practice | Multiple game modes | Stats and settings |
-
-## 🛠️ Tech Stack
-
-- **React 18** - UI framework
-- **Tailwind CSS** - Styling
-- **Lucide React** - Icons
-- **Web Speech API** - Text-to-speech
-- **LocalStorage** - Data persistence
+> 💡 **Privacy Note:** All API keys are stored securely in your browser's local storage and are never sent to our servers.
 
 ## 📄 License
 
-MIT License - feel free to use and modify!
-
-## 👨‍💻 Developer
-
-Made with ❤️ by [koukihk](https://github.com/koukihk)
-
----
-
-**Start your language learning journey today! 🚀**
+MIT License © 2025 [koukihk](https://github.com/koukihk)
