@@ -34,13 +34,20 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
   const currentEndpoint = config.openaiEndpoint;
 
   // 执行 API 连接测试，返回是否成功
-  const doTestConnection = async () => {
+  // 可选参数 provider 用于测试指定的供应商
+  const doTestConnection = async (testProvider = null) => {
+    const provider = testProvider || config.provider;
+    const apiKey = provider === 'gemini' ? config.geminiApiKey : config.openaiApiKey;
+    const model = provider === 'gemini' ? (config.geminiModel || defaultModels.gemini) : (config.openaiModel || defaultModels.openai);
+    const endpoint = config.openaiEndpoint;
+    
+    if (!apiKey) return false;
+    
     try {
       let response;
-      if (config.provider === 'gemini') {
-        const model = currentModel || defaultModels.gemini;
+      if (provider === 'gemini') {
         response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentApiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -50,16 +57,15 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
           }
         );
       } else {
-        let endpoint = currentEndpoint || 'https://api.openai.com/v1';
-        if (!endpoint.includes('/chat/completions')) {
-          endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+        let apiEndpoint = endpoint || 'https://api.openai.com/v1';
+        if (!apiEndpoint.includes('/chat/completions')) {
+          apiEndpoint = apiEndpoint.replace(/\/$/, '') + '/chat/completions';
         }
-        const model = currentModel || defaultModels.openai;
-        response = await fetch(endpoint, {
+        response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentApiKey}`
+            'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
             model: model,
@@ -84,6 +90,50 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
     const success = await doTestConnection();
     setTestResult({ success, message: success ? t.aiTestSuccess : t.aiTestFail });
     setTesting(false);
+  };
+
+  // 处理供应商切换
+  const handleProviderChange = async (newProvider) => {
+    if (newProvider === config.provider) return;
+    
+    const newApiKey = newProvider === 'gemini' ? config.geminiApiKey : config.openaiApiKey;
+    
+    // 如果当前已启用且新供应商有 API Key，需要重新验证
+    if (config.enabled && newApiKey) {
+      setTesting(true);
+      setTestResult(null);
+      setConfig({ ...config, provider: newProvider });
+      
+      const success = await doTestConnection(newProvider);
+      
+      if (success) {
+        setTestResult({ success: true, message: t.aiTestSuccess });
+      } else {
+        // 验证失败，关闭开关
+        setConfig(prev => ({ ...prev, provider: newProvider, enabled: false }));
+        setTestResult({ success: false, message: t.aiTestFail });
+        // 保存禁用状态
+        const finalConfig = {
+          enabled: false,
+          provider: newProvider,
+          apiKey: newApiKey,
+          model: (newProvider === 'gemini' ? config.geminiModel : config.openaiModel) || defaultModels[newProvider],
+          endpoint: config.openaiEndpoint,
+          geminiApiKey: config.geminiApiKey,
+          geminiModel: config.geminiModel,
+          openaiApiKey: config.openaiApiKey,
+          openaiModel: config.openaiModel,
+          openaiEndpoint: config.openaiEndpoint
+        };
+        onSave(finalConfig);
+      }
+      
+      setTesting(false);
+    } else {
+      // 未启用或新供应商没有 API Key，直接切换
+      setConfig({ ...config, provider: newProvider, enabled: false });
+      setTestResult(null);
+    }
   };
 
   const handleSave = () => {
@@ -201,8 +251,9 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
             <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">{t.aiProvider}</label>
             <div className="flex gap-2">
               <button
-                onClick={() => setConfig({ ...config, provider: 'gemini' })}
-                className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all ${config.provider === 'gemini'
+                onClick={() => handleProviderChange('gemini')}
+                disabled={testing}
+                className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all disabled:opacity-50 ${config.provider === 'gemini'
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
                   : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 border border-white/40 dark:border-white/10'
                   }`}
@@ -210,8 +261,9 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
                 Gemini
               </button>
               <button
-                onClick={() => setConfig({ ...config, provider: 'openai' })}
-                className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all ${config.provider === 'openai'
+                onClick={() => handleProviderChange('openai')}
+                disabled={testing}
+                className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all disabled:opacity-50 ${config.provider === 'openai'
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
                   : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 border border-white/40 dark:border-white/10'
                   }`}
