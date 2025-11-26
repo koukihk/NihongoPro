@@ -3,19 +3,22 @@
  * AI-powered fill-in-the-blank vocabulary practice
  */
 
-import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, CloudLightning, Bot, Trophy } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, ChevronRight, CloudLightning, Bot, Trophy, Volume2 } from 'lucide-react';
 import { GlassCard } from '../ui';
 import { shuffleArray } from '../../utils/helpers';
+import { ttsService } from '../../services/tts';
 
 const FillBlankGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, aiConfig, targetLang, updateGoal }) => {
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState(null); // 改为 null 以区分"未加载"和"空数组"
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
   const [score, setScore] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const hasInitialized = useRef(false); // 防止重复初始化
 
   const generateQuestions = async () => {
     if (!aiConfig?.enabled || !aiConfig?.apiKey) {
@@ -101,8 +104,25 @@ Return ONLY this JSON format:
   };
 
   useEffect(() => {
+    // 防止 StrictMode 或重复渲染导致多次调用
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
     generateQuestions();
   }, []);
+
+  // 播放完整句子的语音
+  const speakSentence = async (question) => {
+    if (isSpeaking || !question) return;
+    setIsSpeaking(true);
+    try {
+      // 将填空替换为正确答案，生成完整句子
+      const fullSentence = question.sentence.replace('____', question.answer);
+      await ttsService.speak(fullSentence, targetLang);
+    } catch (e) {
+      console.error('TTS failed:', e);
+    }
+    setIsSpeaking(false);
+  };
 
 
   const handleSelect = (option) => {
@@ -147,7 +167,7 @@ Return ONLY this JSON format:
     );
   }
 
-  if (questions.length === 0) {
+  if (!questions || questions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full animate-fade-in text-center p-8">
         <X size={64} className="text-red-300 mb-4" />
@@ -208,7 +228,21 @@ Return ONLY this JSON format:
             ))}
           </p>
           {selectedOption && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">{currentQ.translation}</p>
+            <div className="flex flex-col items-center mt-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center">{currentQ.translation}</p>
+              <button
+                onClick={() => speakSentence(currentQ)}
+                disabled={isSpeaking}
+                className={`mt-3 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  isSpeaking 
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-400' 
+                    : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+                }`}
+              >
+                <Volume2 size={16} className={isSpeaking ? 'animate-pulse' : ''} />
+                {isSpeaking ? (isZh ? '播放中...' : 'Playing...') : (isZh ? '听发音' : 'Listen')}
+              </button>
+            </div>
           )}
         </GlassCard>
 
