@@ -350,7 +350,7 @@ Keep it concise and helpful. No markdown formatting.`;
   }
 
   return (
-    <div className="flex flex-col items-center h-[85vh] pb-20 animate-fade-in relative px-2">
+    <div className="flex flex-col items-center h-[85vh] pb-28 animate-fade-in relative px-2">
       <div className="w-full flex justify-between items-center mb-6">
         <button onClick={onFinish} className="p-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors">
           <ChevronRight size={24} className="rotate-180 text-gray-600 dark:text-gray-300" />
@@ -432,7 +432,7 @@ Keep it concise and helpful. No markdown formatting.`;
         </div>
       </div>
 
-      <button onClick={handleNext} className="mt-8 w-full max-w-xs bg-gray-900 dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg shadow-xl shadow-gray-900/20 dark:shadow-white/10 active:scale-95 transition-all flex items-center justify-center backdrop-blur-sm group overflow-hidden relative">
+      <button onClick={handleNext} className="absolute bottom-6 w-full max-w-xs bg-gray-900 dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg shadow-xl shadow-gray-900/20 dark:shadow-white/10 active:scale-95 transition-all flex items-center justify-center backdrop-blur-sm group overflow-hidden z-20">
         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
         <span className="relative flex items-center">{currentIndex === cardList.length - 1 ? t.finish : t.next} <ChevronRight size={20} className="ml-1" /></span>
       </button>
