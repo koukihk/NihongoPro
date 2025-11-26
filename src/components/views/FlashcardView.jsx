@@ -434,7 +434,7 @@ Keep it concise and helpful. No markdown formatting.`;
 
       <button onClick={handleNext} className="mt-8 w-full max-w-xs bg-gray-900 dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg shadow-xl shadow-gray-900/20 dark:shadow-white/10 active:scale-95 transition-all flex items-center justify-center backdrop-blur-sm group overflow-hidden relative">
         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-        <span className="relative flex items-center">{t.next} <ChevronRight size={20} className="ml-1" /></span>
+        <span className="relative flex items-center">{currentIndex === cardList.length - 1 ? t.finish : t.next} <ChevronRight size={20} className="ml-1" /></span>
       </button>
     </div>
   );
