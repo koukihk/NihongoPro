@@ -3,28 +3,216 @@
  * Displays vocabulary flashcards with AI-powered explanations
  */
 
-import { useState, useMemo } from 'react';
-import { ChevronRight, RotateCcw, Volume2, Heart, Sparkles, Lightbulb } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { ChevronRight, RotateCcw, Volume2, Heart, Sparkles, Lightbulb, CloudLightning } from 'lucide-react';
 import { GlassCard } from '../ui';
 import { speak, shuffleArray } from '../../utils/helpers';
 
-const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFinish, updateGoal, aiConfig, targetLang }) => {
+const FlashcardView = ({ t, isZh, vocabList, userFavorites, toggleFavorite, onFinish, updateGoal, aiConfig, targetLang, targetLevel, addCustomVocab }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [aiExplanation, setAiExplanation] = useState(null);
   const [isExplaining, setIsExplaining] = useState(false);
   const [memoryTip, setMemoryTip] = useState(null);
   const [isLoadingTip, setIsLoadingTip] = useState(false);
-  const shuffledList = useMemo(() => shuffleArray(vocabList), [vocabList]);
-  const currentCard = shuffledList[currentIndex];
-  const isFav = userFavorites.includes(currentCard?.id);
+  const [cardList, setCardList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const hasInitialized = useRef(false);
+  
+  // 主题池，用于 AI 生成
+  const themePool = [
+    { theme: 'daily life', hint: 'common activities, routines, household' },
+    { theme: 'food & cooking', hint: 'ingredients, dishes, flavors, dining' },
+    { theme: 'travel & places', hint: 'destinations, transportation, sightseeing' },
+    { theme: 'emotions & personality', hint: 'feelings, traits, reactions' },
+    { theme: 'nature & weather', hint: 'seasons, animals, plants, climate' },
+    { theme: 'work & business', hint: 'office, meetings, careers, economy' },
+    { theme: 'hobbies & entertainment', hint: 'sports, music, games, movies' },
+    { theme: 'technology & internet', hint: 'devices, apps, social media' },
+    { theme: 'health & body', hint: 'fitness, medical, wellness' },
+    { theme: 'shopping & fashion', hint: 'clothes, stores, prices, styles' },
+  ];
+
+  // AI 生成词汇
+  const generateAIVocab = async () => {
+    if (!aiConfig?.enabled || !aiConfig?.apiKey) return null;
+    
+    const isJapanese = targetLang === 'ja';
+    const langName = isJapanese ? 'Japanese' : 'Korean';
+    
+    // 随机选择主题
+    const selectedTheme = themePool[Math.floor(Math.random() * themePool.length)];
+    
+    // 根据用户设置的等级确定难度
+    const getLevelDescription = () => {
+      if (targetLevel === 'mixed') return 'mixed difficulty (include beginner to advanced words)';
+      if (isJapanese) {
+        const levelMap = { 
+          N5: 'JLPT N5 (basic, high-frequency words)', 
+          N4: 'JLPT N4 (elementary, everyday vocabulary)', 
+          N3: 'JLPT N3 (intermediate, common expressions)', 
+          N2: 'JLPT N2 (upper-intermediate, abstract concepts)', 
+          N1: 'JLPT N1 (advanced, sophisticated vocabulary)' 
+        };
+        return levelMap[targetLevel] || levelMap.N5;
+      } else {
+        const levelMap = { 
+          TOPIK1: 'TOPIK 1 (basic vocabulary)', 
+          TOPIK2: 'TOPIK 2 (elementary expressions)', 
+          TOPIK3: 'TOPIK 3 (intermediate vocabulary)', 
+          TOPIK4: 'TOPIK 4 (upper-intermediate)', 
+          TOPIK5: 'TOPIK 5 (advanced vocabulary)', 
+          TOPIK6: 'TOPIK 6 (proficient, academic)' 
+        };
+        return levelMap[targetLevel] || levelMap.TOPIK1;
+      }
+    };
+    
+    const levelDesc = getLevelDescription();
+    const randomSeed = Math.floor(Math.random() * 10000);
+    
+    const prompt = `Generate 10 ${langName} vocabulary words for flashcard study. Seed: ${randomSeed}
+
+THEME: ${selectedTheme.theme} (${selectedTheme.hint})
+LEVEL: ${levelDesc}
+
+RULES:
+- All words should relate to "${selectedTheme.theme}"
+- Match the difficulty level: ${levelDesc}
+- Include a mix of nouns, verbs, and adjectives
+- AVOID overly common beginner words for higher levels
+- Each word must have accurate translations
+
+Return ONLY valid JSON array:
+[{"id":"ai1","ja":"word","ro":"romaji","zh":"中文","en":"English"}]
+
+Generate exactly 10 unique words. No markdown.`;
+
+    try {
+      let text = '';
+      if (aiConfig.provider === 'gemini') {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model || 'gemini-2.0-flash'}:generateContent?key=${aiConfig.apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.8 } }) }
+        );
+        const data = await res.json();
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        let endpoint = aiConfig.endpoint || 'https://api.openai.com/v1';
+        if (!endpoint.includes('/chat/completions')) endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.apiKey}` },
+          body: JSON.stringify({ model: aiConfig.model || 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.8 })
+        });
+        const data = await res.json();
+        text = data.choices?.[0]?.message?.content || '';
+      }
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        let jsonStr = jsonMatch[0];
+        // 尝试修复常见的 JSON 格式错误
+        // 修复 "id":"ai6":"word" 这种格式错误为 "id":"ai6","ja":"word"
+        jsonStr = jsonStr.replace(/"id"\s*:\s*"([^"]+)"\s*:\s*"/g, '"id":"$1","ja":"');
+        
+        try {
+          const parsed = JSON.parse(jsonStr);
+          // 验证数据格式，过滤掉无效的词汇
+          const validVocab = parsed.filter(v => v && v.ja && v.ro && (v.zh || v.en));
+          if (validVocab.length > 0) {
+            return validVocab;
+          }
+        } catch (parseError) {
+          console.error('JSON parse failed after fix attempt:', parseError);
+        }
+      }
+    } catch (e) {
+      console.error('AI vocab generation failed:', e);
+    }
+    return null;
+  };
+
+  // 初始化词汇列表
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+    
+    const loadVocab = async () => {
+      setIsLoading(true);
+      
+      // 检查是否是"只复习收藏"模式（传入的词汇都是收藏的）
+      const isFavoritesOnly = vocabList.length > 0 && vocabList.every(v => userFavorites.includes(v.id));
+      
+      // 如果是"只复习收藏"模式，直接使用传入的词汇，不调用 AI
+      if (isFavoritesOnly) {
+        setCardList(shuffleArray([...vocabList]));
+        setIsLoading(false);
+        return;
+      }
+      
+      // 尝试 AI 生成
+      if (aiConfig?.enabled && aiConfig?.apiKey) {
+        const aiVocab = await generateAIVocab();
+        if (aiVocab && aiVocab.length > 0) {
+          setCardList(aiVocab);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // AI 失败或未启用，使用本地词库
+      setCardList(shuffleArray([...vocabList]));
+      setIsLoading(false);
+    };
+    
+    loadVocab();
+  }, []);
+
+  const currentCard = cardList[currentIndex];
+  // 检查当前卡片是否是 AI 生成的（id 以 'ai' 开头且不是 custom_）
+  const isAICard = currentCard?.id?.toString().startsWith('ai') && !currentCard?.id?.toString().startsWith('custom_');
+  // 检查是否已收藏
+  const isFav = currentCard ? userFavorites.includes(currentCard.id) : false;
+
+  // 处理收藏（包括 AI 生成的词汇）
+  const handleFavorite = () => {
+    if (!currentCard) return;
+    
+    if (isAICard && !isFav) {
+      // AI 词汇首次收藏：生成持久化 ID，保存到自定义词库
+      const customId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const customVocab = {
+        id: customId,
+        ja: currentCard.ja,
+        ro: currentCard.ro,
+        zh: currentCard.zh,
+        en: currentCard.en,
+        kana: currentCard.kana || currentCard.ro,
+        source: 'ai',
+        createdAt: new Date().toISOString()
+      };
+      
+      // 保存到自定义词库并收藏
+      if (addCustomVocab) {
+        addCustomVocab(customVocab);
+        toggleFavorite(customId);
+        // 更新当前卡片的 ID，这样 UI 可以正确显示收藏状态
+        setCardList(prev => prev.map((card, idx) => 
+          idx === currentIndex ? { ...card, id: customId } : card
+        ));
+      }
+    } else {
+      // 普通词汇或已保存的 AI 词汇：直接切换收藏状态
+      toggleFavorite(currentCard.id);
+    }
+  };
 
   const handleNext = () => {
     setIsFlipped(false);
     setAiExplanation(null);
     setMemoryTip(null);
     updateGoal('words', 1);
-    setTimeout(() => { if (currentIndex < shuffledList.length - 1) setCurrentIndex(p => p + 1); else onFinish(); }, 200);
+    setTimeout(() => { if (currentIndex < cardList.length - 1) setCurrentIndex(p => p + 1); else onFinish(); }, 200);
   };
 
   const getMemoryTip = async () => {
@@ -120,6 +308,16 @@ Keep it concise and helpful. No markdown formatting.`;
     setIsExplaining(false);
   };
 
+  // 加载状态
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full animate-fade-in">
+        <CloudLightning size={48} className="text-blue-400 animate-bounce mb-4" />
+        <p className="text-gray-500 dark:text-gray-400 font-bold">{aiConfig?.enabled ? t.aiGenerating : t.loading}</p>
+      </div>
+    );
+  }
+
   if (!currentCard) return null;
   
   return (
@@ -128,8 +326,13 @@ Keep it concise and helpful. No markdown formatting.`;
         <button onClick={onFinish} className="p-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors">
           <ChevronRight size={24} className="rotate-180 text-gray-600 dark:text-gray-300" />
         </button>
-        <div className="text-sm font-bold bg-white/30 dark:bg-black/30 backdrop-blur-md px-3 py-1 rounded-full text-gray-600 dark:text-gray-300 shadow-sm border border-white/20 dark:border-white/10">
-          {currentIndex + 1} / {shuffledList.length}
+        <div className="flex items-center gap-2">
+          {aiConfig?.enabled && aiConfig?.apiKey && isAICard && (
+            <span className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold">AI</span>
+          )}
+          <div className="text-sm font-bold bg-white/30 dark:bg-black/30 backdrop-blur-md px-3 py-1 rounded-full text-gray-600 dark:text-gray-300 shadow-sm border border-white/20 dark:border-white/10">
+            {currentIndex + 1} / {cardList.length}
+          </div>
         </div>
         <div className="w-10"></div>
       </div>
@@ -141,7 +344,12 @@ Keep it concise and helpful. No markdown formatting.`;
               <span className="px-3 py-1 bg-blue-100/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wider">JP</span>
               <div className="flex space-x-2">
                 <button onClick={() => speak(currentCard.kana || currentCard.ja)} className="p-2.5 bg-white/50 dark:bg-gray-700/50 rounded-full text-blue-500 dark:text-blue-300 hover:scale-110 transition-transform shadow-sm"><Volume2 size={20} /></button>
-                <button onClick={() => toggleFavorite(currentCard.id)} className={`p-2.5 rounded-full transition-all hover:scale-110 shadow-sm ${isFav ? 'bg-pink-100 text-pink-500' : 'bg-white/50 dark:bg-gray-700/50 text-gray-400'}`}><Heart size={20} fill={isFav ? "currentColor" : "none"} /></button>
+                <button 
+                  onClick={handleFavorite} 
+                  className={`p-2.5 rounded-full transition-all hover:scale-110 shadow-sm ${isFav ? 'bg-pink-100 text-pink-500' : 'bg-white/50 dark:bg-gray-700/50 text-gray-400'}`}
+                >
+                  <Heart size={20} fill={isFav ? "currentColor" : "none"} />
+                </button>
                 {aiConfig?.enabled && aiConfig?.apiKey && (
                   <>
                     <button onClick={() => memoryTip ? setMemoryTip(null) : getMemoryTip()} disabled={isLoadingTip} className={`p-2.5 rounded-full hover:scale-110 transition-transform shadow-sm disabled:opacity-50 ${memoryTip ? 'bg-yellow-100 text-yellow-600 ring-2 ring-yellow-400' : 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'}`} title={t.aiMemoryTip}>
@@ -175,8 +383,12 @@ Keep it concise and helpful. No markdown formatting.`;
               </div>
             ) : (
               <>
-                <div className="flex-1 flex flex-col items-center justify-center space-y-4">
-                  <h2 className="text-5xl sm:text-6xl font-medium text-gray-800 dark:text-white text-center break-keep leading-tight px-2">{currentCard.ja}</h2>
+                <div className="flex-1 flex flex-col items-center justify-center space-y-4 w-full overflow-hidden">
+                  <h2 className={`font-medium text-gray-800 dark:text-white text-center leading-tight px-4 w-full ${
+                    currentCard.ja.length > 8 ? 'text-3xl sm:text-4xl' : 
+                    currentCard.ja.length > 5 ? 'text-4xl sm:text-5xl' : 
+                    'text-5xl sm:text-6xl'
+                  }`}>{currentCard.ja}</h2>
                   <p className="text-xl text-gray-400 dark:text-gray-500 font-medium tracking-wide">{currentCard.ro}</p>
                 </div>
                 <div className="mt-4 text-blue-400 text-sm font-bold flex items-center justify-center animate-bounce-slow opacity-80">

@@ -8,7 +8,7 @@ import { X, CloudLightning, Trophy } from 'lucide-react';
 import { GlassCard } from '../ui';
 import { speak, shuffleArray } from '../../utils/helpers';
 
-const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake, updateGoal, aiConfig, targetLang }) => {
+const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake, updateGoal, aiConfig, targetLang, targetLevel }) => {
   const [cards, setCards] = useState([]);
   const [selected, setSelected] = useState([]);
   const [matched, setMatched] = useState([]);
@@ -17,13 +17,69 @@ const MatchingGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, addMistake,
   const [isCompleted, setIsCompleted] = useState(false);
   const [score, setScore] = useState(0);
 
+  // 主题池，每次随机选择不同主题
+  const themePool = [
+    { theme: 'kitchen & cooking', hint: 'ingredients, utensils, cooking verbs' },
+    { theme: 'city life', hint: 'buildings, streets, urban activities' },
+    { theme: 'seasons & weather', hint: 'spring, summer, rain, temperature' },
+    { theme: 'emotions', hint: 'feelings, moods, reactions' },
+    { theme: 'clothing & fashion', hint: 'clothes, accessories, wearing' },
+    { theme: 'technology', hint: 'phone, computer, internet terms' },
+    { theme: 'sports & fitness', hint: 'exercises, games, body movements' },
+    { theme: 'music & art', hint: 'instruments, colors, creative activities' },
+    { theme: 'nature & outdoors', hint: 'plants, animals, landscapes' },
+    { theme: 'home & furniture', hint: 'rooms, household items, daily routines' },
+    { theme: 'school & learning', hint: 'subjects, supplies, study activities' },
+    { theme: 'travel & vacation', hint: 'destinations, transportation, tourism' },
+    { theme: 'health & body', hint: 'body parts, symptoms, wellness' },
+    { theme: 'food & restaurants', hint: 'dishes, flavors, dining' },
+    { theme: 'numbers & counting', hint: 'counters, quantities, measurements' },
+  ];
+
   const generateAIVocab = async () => {
     if (!aiConfig?.enabled || !aiConfig?.apiKey) return null;
-    const langName = targetLang === 'ja' ? 'Japanese' : 'Korean';
-    const userLang = isZh ? 'Chinese' : 'English';
-    const prompt = `Generate 6 ${langName} vocabulary words for a matching game. Reply in JSON only.
-Return format: [{"id":"ai1","ja":"word","ro":"romaji","zh":"Chinese meaning","en":"English meaning"}]
-Mix different categories (food, animals, verbs, adjectives). Keep words simple for beginners.`;
+    const isJapanese = targetLang === 'ja';
+    const langName = isJapanese ? 'Japanese' : 'Korean';
+    
+    // 随机选择一个主题
+    const selectedTheme = themePool[Math.floor(Math.random() * themePool.length)];
+    
+    // 根据用户设置的等级确定难度
+    const getLevelDescription = () => {
+      if (targetLevel === 'mixed') return 'mixed difficulty levels';
+      if (isJapanese) {
+        const levelMap = { N5: 'N5 beginner', N4: 'N4 elementary', N3: 'N3 intermediate', N2: 'N2 upper-intermediate', N1: 'N1 advanced' };
+        return levelMap[targetLevel] || 'N5 beginner';
+      } else {
+        const levelMap = { TOPIK1: 'TOPIK 1 beginner', TOPIK2: 'TOPIK 2 elementary', TOPIK3: 'TOPIK 3 intermediate', TOPIK4: 'TOPIK 4 upper-intermediate', TOPIK5: 'TOPIK 5 advanced', TOPIK6: 'TOPIK 6 proficient' };
+        return levelMap[targetLevel] || 'TOPIK 1 beginner';
+      }
+    };
+    const level = getLevelDescription();
+    
+    // 针对不同语言的避免词汇
+    const avoidWords = isJapanese
+      ? '猫, 犬, 食べる, 飲む, 大きい, 小さい, 見る, 行く'
+      : '고양이, 개, 먹다, 마시다, 크다, 작다, 보다, 가다';
+    
+    // 随机种子
+    const seed = Math.floor(Math.random() * 10000);
+    
+    const prompt = `Generate 6 ${langName} vocabulary words for a matching game. Seed: ${seed}
+
+THEME: ${selectedTheme.theme} (${selectedTheme.hint})
+LEVEL: ${level}
+
+RULES:
+- All 6 words MUST relate to the theme "${selectedTheme.theme}"
+- AVOID overused words like: ${avoidWords}
+- Choose INTERESTING vocabulary that fits the theme
+- Words should be visually distinct (not too similar)
+
+Return JSON only:
+[{"id":"ai1","ja":"word","ro":"romaji","zh":"中文意思","en":"English meaning"}]
+
+Generate exactly 6 unique words. No markdown.`;
     try {
       let text = '';
       if (aiConfig.provider === 'gemini') {
@@ -42,7 +98,18 @@ Mix different categories (food, animals, verbs, adjectives). Keep words simple f
         text = data.choices?.[0]?.message?.content || '';
       }
       const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+      if (jsonMatch) {
+        try {
+          // 尝试修复常见的 JSON 格式错误
+          let jsonStr = jsonMatch[0].replace(/"id"\s*:\s*"([^"]+)"\s*:\s*"/g, '"id":"$1","ja":"');
+          const parsed = JSON.parse(jsonStr);
+          // 验证数据格式
+          const validVocab = parsed.filter(v => v && v.ja && v.ro && (v.zh || v.en));
+          if (validVocab.length > 0) return validVocab;
+        } catch (parseError) {
+          console.error('JSON parse failed:', parseError);
+        }
+      }
     } catch (e) { console.error('AI vocab generation failed:', e); }
     return null;
   };

@@ -4,7 +4,6 @@ import {
   Sparkles, Heart, CheckCircle,
   CloudLightning, X, PenTool
 } from 'lucide-react';
-import JSZip from 'jszip';
 import * as jaData from './data/ja';
 import * as koData from './data/ko';
 import { TRANSLATIONS } from './data/translations';
@@ -14,7 +13,7 @@ import { useFavicon } from './utils/helpers';
 import { AVATARS } from './utils/constants';
 
 // Import UI components
-import { GlassCard, NavItem, SectionHeader } from './components/ui';
+import { GlassCard, NavItem, SectionHeader, BackupReminder } from './components/ui';
 
 // Import Modal components
 import {
@@ -24,7 +23,8 @@ import {
   PrivacyModal,
   KanaCanvasModal,
   UserGuideModal,
-  TTSSettingsModal
+  TTSSettingsModal,
+  DataManagementModal
 } from './components/modals';
 
 // Import View components
@@ -67,6 +67,7 @@ export default function App() {
   const [showAISettings, setShowAISettings] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTTSSettings, setShowTTSSettings] = useState(false);
+  const [showDataManagement, setShowDataManagement] = useState(false);
   const [aiConfig, setAIConfig] = useState(() => {
     const saved = localStorage.getItem('kawaii_ai_config');
     return saved ? JSON.parse(saved) : { enabled: false, provider: 'gemini', apiKey: '', model: '', endpoint: '' };
@@ -75,6 +76,7 @@ export default function App() {
     const saved = localStorage.getItem('kawaii_tts_config');
     return saved ? JSON.parse(saved) : { enabled: false, provider: 'native' };
   });
+  const [targetLevel, setTargetLevel] = useState(() => localStorage.getItem('kawaii_target_level') || 'N5');
 
   const t = TRANSLATIONS[lang];
   const isZh = lang === 'zh';
@@ -82,8 +84,9 @@ export default function App() {
   const currentVocabList = useMemo(() => {
     const base = DATA[targetLang].BASE_VOCAB;
     const cloud = DATA[targetLang].CLOUD_VOCAB;
-    return onlineMode ? [...base, ...cloud] : base;
-  }, [onlineMode, targetLang]);
+    const custom = user?.customVocab || [];
+    return onlineMode ? [...base, ...cloud, ...custom] : [...base, ...custom];
+  }, [onlineMode, targetLang, user?.customVocab]);
 
   useEffect(() => { window.__appTargetLang = targetLang; }, [targetLang]);
 
@@ -127,6 +130,16 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => { localStorage.setItem('kawaii_target_lang', targetLang); }, [targetLang]);
+  useEffect(() => { localStorage.setItem('kawaii_target_level', targetLevel); }, [targetLevel]);
+  
+  // 当切换语言时，自动调整等级设置
+  useEffect(() => {
+    if (targetLang === 'ja' && targetLevel.startsWith('TOPIK')) {
+      setTargetLevel('N5');
+    } else if (targetLang === 'ko' && targetLevel.startsWith('N') && targetLevel !== 'mixed') {
+      setTargetLevel('TOPIK1');
+    }
+  }, [targetLang]);
 
   useFavicon(user && user.avatarId ? AVATARS.find(a => a.id === user.avatarId)?.icon || '🐱' : '🌸');
 
@@ -153,6 +166,14 @@ export default function App() {
   const removeMistake = (id) => {
     const mistakes = user.mistakes || [];
     saveUser({ ...user, mistakes: mistakes.filter(m => m !== id) });
+  };
+  // 添加自定义词汇（用于保存 AI 生成的收藏词汇）
+  const addCustomVocab = (vocab) => {
+    const customVocab = user.customVocab || [];
+    // 检查是否已存在相同的词汇（通过 ja 字段判断）
+    if (!customVocab.find(v => v.ja === vocab.ja)) {
+      saveUser({ ...user, customVocab: [...customVocab, vocab] });
+    }
   };
   const updateGoal = (type, amount = 1) => {
     if (!user.dailyGoals) return;
@@ -221,41 +242,6 @@ export default function App() {
     localStorage.setItem('kawaii_study_logs', JSON.stringify(updatedLogs));
   };
 
-
-  const exportData = async () => {
-    const zip = new JSZip();
-    const data = { user, logs, settings: { lang, targetLang, theme, onlineMode, aiConfig }, exportDate: new Date().toISOString(), version: '1.0' };
-    zip.file('kawaii_backup.json', JSON.stringify(data, null, 2));
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `kawaii_backup_${new Date().toISOString().slice(0, 10)}.zip`; a.click();
-    URL.revokeObjectURL(url);
-    showToast(t.exportSuccess);
-  };
-  const importData = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const zip = await JSZip.loadAsync(file);
-      const jsonFile = zip.file('kawaii_backup.json');
-      if (!jsonFile) throw new Error('Invalid backup file');
-      const content = await jsonFile.async('string');
-      const data = JSON.parse(content);
-      if (data.user) saveUser(data.user);
-      if (data.logs) { setLogs(data.logs); localStorage.setItem('kawaii_study_logs', JSON.stringify(data.logs)); }
-      if (data.settings) {
-        if (data.settings.lang) { setLang(data.settings.lang); localStorage.setItem('kawaii_lang', data.settings.lang); }
-        if (data.settings.targetLang) { setTargetLang(data.settings.targetLang); localStorage.setItem('kawaii_target_lang', data.settings.targetLang); }
-        if (data.settings.theme) setTheme(data.settings.theme);
-        if (data.settings.onlineMode !== undefined) { setOnlineMode(data.settings.onlineMode); localStorage.setItem('kawaii_online_mode', String(data.settings.onlineMode)); }
-        if (data.settings.aiConfig) { setAIConfig(data.settings.aiConfig); localStorage.setItem('kawaii_ai_config', JSON.stringify(data.settings.aiConfig)); }
-      }
-      showToast(t.importSuccess);
-    } catch (err) { showToast(t.importFail); }
-    e.target.value = '';
-  };
-
   if (!user) return null;
 
 
@@ -287,6 +273,10 @@ export default function App() {
       {showAISettings && <AISettingsModal t={t} aiConfig={aiConfig} onSave={saveAIConfig} onClose={() => setShowAISettings(false)} onlineMode={onlineMode} />}
       {showPrivacy && <PrivacyModal t={t} onClose={() => setShowPrivacy(false)} />}
       {showTTSSettings && <TTSSettingsModal t={t} ttsConfig={ttsConfig} onSave={saveTTSConfig} onClose={() => setShowTTSSettings(false)} onlineMode={onlineMode} lang={lang} />}
+      {showDataManagement && <DataManagementModal t={t} isOpen={showDataManagement} onClose={() => setShowDataManagement(false)} user={user} logs={logs} settings={{ lang, targetLang, theme, onlineMode, aiConfig, ttsConfig }} onRestore={(data) => { if (data.user) saveUser(data.user); if (data.logs) { setLogs(data.logs); localStorage.setItem('kawaii_study_logs', JSON.stringify(data.logs)); } if (data.settings) { if (data.settings.lang) { setLang(data.settings.lang); localStorage.setItem('kawaii_lang', data.settings.lang); } if (data.settings.targetLang) { setTargetLang(data.settings.targetLang); } if (data.settings.theme) setTheme(data.settings.theme); if (data.settings.onlineMode !== undefined) { setOnlineMode(data.settings.onlineMode); localStorage.setItem('kawaii_online_mode', String(data.settings.onlineMode)); } if (data.settings.aiConfig) { setAIConfig(data.settings.aiConfig); localStorage.setItem('kawaii_ai_config', JSON.stringify(data.settings.aiConfig)); } if (data.settings.ttsConfig) { setTTSConfig(data.settings.ttsConfig); localStorage.setItem('kawaii_tts_config', JSON.stringify(data.settings.ttsConfig)); } } }} lang={lang} />}
+
+      {/* Backup Reminder - Requirements 7.1, 7.2, 7.3 */}
+      {user !== 'NEW' && !practiceMode && <BackupReminder t={t} onBackupClick={() => setShowDataManagement(true)} />}
 
 
       {/* Background gradients */}
@@ -359,17 +349,17 @@ export default function App() {
                 )}
               </div>
             )}
-            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { const newLang = lang === 'zh' ? 'en' : 'zh'; setLang(newLang); localStorage.setItem('kawaii_lang', newLang); }} user={user} updateUser={saveUser} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} claimGoal={claimGoalReward} onResetRequest={() => setShowResetModal(true)} aiConfig={aiConfig} onAISettingsOpen={() => setShowAISettings(true)} onPrivacyOpen={() => setShowPrivacy(true)} onExportData={exportData} onImportData={importData} ttsConfig={ttsConfig} onTTSSettingsOpen={() => setShowTTSSettings(true)} />}
+            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { const newLang = lang === 'zh' ? 'en' : 'zh'; setLang(newLang); localStorage.setItem('kawaii_lang', newLang); }} user={user} updateUser={saveUser} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} claimGoal={claimGoalReward} onResetRequest={() => setShowResetModal(true)} aiConfig={aiConfig} onAISettingsOpen={() => setShowAISettings(true)} onPrivacyOpen={() => setShowPrivacy(true)} onDataManagement={() => setShowDataManagement(true)} ttsConfig={ttsConfig} onTTSSettingsOpen={() => setShowTTSSettings(true)} targetLevel={targetLevel} setTargetLevel={setTargetLevel} />}
           </div>
         )}
 
         {practiceMode && (
           <div className="h-full">
             {practiceMode === 'mistake' && <MistakeView t={t} isZh={isZh} vocabList={currentVocabList} userMistakes={user.mistakes || []} removeMistake={removeMistake} onFinish={() => setPracticeMode(null)} aiConfig={aiConfig} targetLang={targetLang} />}
-            {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} />}
-            {practiceMode === 'matching' && <MatchingGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); addXp(20); }} addLog={addLog} addMistake={addMistake} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} />}
-            {practiceMode === 'quiz' && <QuizView t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} praisePhrases={DATA[targetLang].PRAISE_PHRASES} addMistake={addMistake} updateGoal={updateGoal} user={user} toggleFavorite={toggleFav} aiConfig={aiConfig} targetLang={targetLang} />}
-            {practiceMode === 'fillblank' && <FillBlankGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} aiConfig={aiConfig} targetLang={targetLang} updateGoal={updateGoal} />}
+            {practiceMode === 'flashcards' && <FlashcardView t={t} isZh={isZh} vocabList={filterFavs ? currentVocabList.filter(v => user.favorites.includes(v.id)) : currentVocabList} userFavorites={user.favorites || []} toggleFavorite={toggleFav} onFinish={() => { setPracticeMode(null); addXp(10); }} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} addCustomVocab={addCustomVocab} />}
+            {practiceMode === 'matching' && <MatchingGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); addXp(20); }} addLog={addLog} addMistake={addMistake} updateGoal={updateGoal} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} />}
+            {practiceMode === 'quiz' && <QuizView t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} praisePhrases={DATA[targetLang].PRAISE_PHRASES} addMistake={addMistake} updateGoal={updateGoal} user={user} toggleFavorite={toggleFav} aiConfig={aiConfig} targetLang={targetLang} targetLevel={targetLevel} />}
+            {practiceMode === 'fillblank' && <FillBlankGame t={t} isZh={isZh} vocabList={currentVocabList} addXp={addXp} onFinish={() => { setPracticeMode(null); }} addLog={addLog} aiConfig={aiConfig} targetLang={targetLang} updateGoal={updateGoal} targetLevel={targetLevel} />}
           </div>
         )}
       </main>

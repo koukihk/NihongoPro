@@ -10,3 +10,4 @@ export { default as PrivacyModal } from './PrivacyModal';
 export { default as KanaCanvasModal } from './KanaCanvasModal';
 export { default as UserGuideModal } from './UserGuideModal';
 export { default as TTSSettingsModal } from './TTSSettingsModal';
+export { default as DataManagementModal } from './DataManagementModal';

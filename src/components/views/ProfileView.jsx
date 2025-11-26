@@ -6,7 +6,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
   ChevronRight, Edit3, Zap, Trophy, CheckCircle, Sun, Moon, Wifi, WifiOff,
-  PenLine, History, Github, Languages, Download, Upload, Bot, RefreshCw, Shield, RotateCcw, Globe, Volume2
+  PenLine, History, Github, Languages, Database, Bot, RefreshCw, Shield, RotateCcw, Globe, Volume2
 } from 'lucide-react';
 import { GlassCard, Avatar, SectionHeader } from '../ui';
 import { HistoryModal } from '../modals';
@@ -23,11 +23,76 @@ const DATA = {
   ko: koData
 };
 
+// 等级选择器组件
+const LevelSelector = ({ t, targetLang, targetLevel, setTargetLevel }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const jaLevels = [
+    { id: 'N5', label: t.levelN5 },
+    { id: 'N4', label: t.levelN4 },
+    { id: 'N3', label: t.levelN3 },
+    { id: 'N2', label: t.levelN2 },
+    { id: 'N1', label: t.levelN1 },
+    { id: 'mixed', label: t.levelMixed },
+  ];
+  
+  const koLevels = [
+    { id: 'TOPIK1', label: t.levelTOPIK1 },
+    { id: 'TOPIK2', label: t.levelTOPIK2 },
+    { id: 'TOPIK3', label: t.levelTOPIK3 },
+    { id: 'TOPIK4', label: t.levelTOPIK4 },
+    { id: 'TOPIK5', label: t.levelTOPIK5 },
+    { id: 'TOPIK6', label: t.levelTOPIK6 },
+    { id: 'mixed', label: t.levelMixed },
+  ];
+  
+  const levels = targetLang === 'ja' ? jaLevels : koLevels;
+  const currentLevel = levels.find(l => l.id === targetLevel) || levels[0];
+  
+  return (
+    <div className="relative w-full">
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]"
+      >
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-amber-100/80 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-2xl group-hover:scale-110 transition-transform">
+            <Trophy size={22} />
+          </div>
+          <span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.targetLevel}</span>
+        </div>
+        <span className="text-sm font-bold bg-white/60 dark:bg-black/20 px-3 py-1 rounded-xl shadow-sm text-amber-600 dark:text-amber-400">
+          {currentLevel.label}
+        </span>
+      </button>
+      
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 dark:border-white/10 z-50 overflow-hidden animate-fade-in">
+          {levels.map((level) => (
+            <button
+              key={level.id}
+              onClick={() => { setTargetLevel(level.id); setIsOpen(false); }}
+              className={`w-full px-5 py-3 text-left font-bold transition-colors flex items-center justify-between ${
+                targetLevel === level.id 
+                  ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {level.label}
+              {targetLevel === level.id && <CheckCircle size={18} className="text-amber-500" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProfileView = ({ 
   t, isZh, toggleLang, user, updateUser, theme, toggleTheme, 
   onlineMode, toggleOnlineMode, logs, targetLang, setTargetLang, 
   claimGoal, onResetRequest, aiConfig, onAISettingsOpen, onPrivacyOpen, 
-  onExportData, onImportData, ttsConfig, onTTSSettingsOpen
+  onDataManagement, ttsConfig, onTTSSettingsOpen, targetLevel, setTargetLevel
 }) => {
   const { level, progress, nextXp } = getLevelInfo(user.xp);
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
@@ -193,6 +258,7 @@ Format exactly like this (no extra text):
         <button onClick={() => setTargetLang(targetLang === 'ja' ? 'ko' : 'ja')} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
           <div className="flex items-center space-x-4"><div className="p-3 bg-pink-100/80 dark:bg-pink-900/50 text-pink-600 dark:text-pink-400 rounded-2xl group-hover:scale-110 transition-transform"><Languages size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.targetLanguage}</span></div><span className="text-2xl font-bold bg-white/60 dark:bg-black/20 px-3 py-1 rounded-xl shadow-sm">{DATA[targetLang].LABELS.flag}</span>
         </button>
+        <LevelSelector t={t} targetLang={targetLang} targetLevel={targetLevel} setTargetLevel={setTargetLevel} />
         <button onClick={toggleTheme} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
           <div className="flex items-center space-x-4"><div className="p-3 bg-orange-100/80 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-2xl group-hover:scale-110 transition-transform">{theme === 'dark' ? <Moon size={22} /> : <Sun size={22} />}</div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.themeMode}</span></div><span className="text-sm font-bold text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-black/20 px-3 py-1 rounded-xl shadow-sm">{theme === 'dark' ? t.themeDark : t.themeLight}</span>
         </button>
@@ -211,13 +277,9 @@ Format exactly like this (no extra text):
         <button onClick={onPrivacyOpen} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
           <div className="flex items-center space-x-4"><div className="p-3 bg-green-100/80 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-2xl group-hover:scale-110 transition-transform"><Shield size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.privacyPolicy}</span></div><ChevronRight size={20} className="text-gray-400" />
         </button>
-        <button onClick={onExportData} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
-          <div className="flex items-center space-x-4"><div className="p-3 bg-blue-100/80 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform"><Upload size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.exportData}</span></div><ChevronRight size={20} className="text-gray-400" />
+        <button onClick={onDataManagement} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
+          <div className="flex items-center space-x-4"><div className="p-3 bg-blue-100/80 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform"><Database size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.dataManagement}</span></div><ChevronRight size={20} className="text-gray-400" />
         </button>
-        <label className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98] cursor-pointer">
-          <div className="flex items-center space-x-4"><div className="p-3 bg-violet-100/80 dark:bg-violet-900/50 text-violet-600 dark:text-violet-400 rounded-2xl group-hover:scale-110 transition-transform"><Download size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.importData}</span></div><ChevronRight size={20} className="text-gray-400" />
-          <input type="file" accept=".zip" onChange={onImportData} className="hidden" />
-        </label>
         <button onClick={onResetRequest} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
           <div className="flex items-center space-x-4"><div className="p-3 bg-red-100/80 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-2xl group-hover:scale-110 group-hover:-rotate-180 transition-all duration-500"><RotateCcw size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.resetData}</span></div><ChevronRight size={20} className="text-gray-400" />
         </button>

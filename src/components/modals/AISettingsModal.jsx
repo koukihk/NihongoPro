@@ -215,8 +215,9 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}></div>
-      <div className="relative w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-[2rem] p-6 shadow-2xl border border-white/60 dark:border-white/10 animate-scale-up max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="relative w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-[2rem] shadow-2xl border border-white/60 dark:border-white/10 animate-scale-up max-h-[85vh] overflow-hidden flex flex-col">
+        {/* 固定头部 */}
+        <div className="flex items-center justify-between p-6 pb-4 shrink-0">
           <h3 className="text-xl font-black text-gray-800 dark:text-white flex items-center">
             <Bot size={24} className="mr-2 text-purple-500" /> {t.aiSettings}
           </h3>
@@ -225,110 +226,116 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
           </button>
         </div>
 
-        {!onlineMode && (
-          <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
-            <p className="text-sm text-yellow-700 dark:text-yellow-300 font-bold flex items-center">
-              <WifiOff size={16} className="mr-2" /> {t.aiNeedsOnline}
-            </p>
-          </div>
-        )}
+        {/* 可滚动内容区 */}
+        <div className="flex-1 overflow-y-auto px-6 ios-scrollbar">
+          <div className="space-y-4">
+            {!onlineMode && (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 font-bold flex items-center">
+                  <WifiOff size={16} className="mr-2" /> {t.aiNeedsOnline}
+                </p>
+              </div>
+            )}
 
-        <div className="space-y-4">
-          {/* AI 启用开关 */}
-          {currentApiKey && (
-            <div className="flex items-center justify-between p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-white/40 dark:border-white/10">
-              <span className="font-bold text-gray-700 dark:text-gray-200">{t.aiMode}</span>
-              <button
-                onClick={handleToggleEnabled}
-                className={`relative w-14 h-8 rounded-full transition-all ${config.enabled ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-              >
-                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all ${config.enabled ? 'left-7' : 'left-1'}`}></div>
-              </button>
-            </div>
-          )}
+            {/* AI 启用开关 */}
+            {currentApiKey && (
+              <div className="flex items-center justify-between p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-white/40 dark:border-white/10">
+                <span className="font-bold text-gray-700 dark:text-gray-200">{t.aiMode}</span>
+                <button
+                  onClick={handleToggleEnabled}
+                  className={`relative w-14 h-8 rounded-full transition-all ${config.enabled ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                >
+                  <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all ${config.enabled ? 'left-7' : 'left-1'}`}></div>
+                </button>
+              </div>
+            )}
 
-          <div>
-            <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">{t.aiProvider}</label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleProviderChange('gemini')}
-                disabled={testing}
-                className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all disabled:opacity-50 ${config.provider === 'gemini'
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
-                  : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 border border-white/40 dark:border-white/10'
-                  }`}
-              >
-                Gemini
-              </button>
-              <button
-                onClick={() => handleProviderChange('openai')}
-                disabled={testing}
-                className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all disabled:opacity-50 ${config.provider === 'openai'
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
-                  : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 border border-white/40 dark:border-white/10'
-                  }`}
-              >
-                OpenAI
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">{t.aiApiKey}</label>
-            <div className="relative">
-              <input
-                type={showApiKey ? 'text' : 'password'}
-                value={currentApiKey}
-                onChange={(e) => setConfig({
-                  ...config,
-                  [config.provider === 'gemini' ? 'geminiApiKey' : 'openaiApiKey']: e.target.value
-                })}
-                placeholder="sk-... / AIza..."
-                className="w-full px-4 py-3 pr-12 rounded-xl bg-white/60 dark:bg-gray-800/60 border-2 border-white/40 dark:border-white/10 text-gray-800 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-              />
-              <button
-                onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
-                {showApiKey ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">{t.aiModel}</label>
-            <input
-              type="text"
-              value={currentModel}
-              onChange={(e) => setConfig({
-                ...config,
-                [config.provider === 'gemini' ? 'geminiModel' : 'openaiModel']: e.target.value
-              })}
-              placeholder={defaultModels[config.provider]}
-              className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-gray-800/60 border-2 border-white/40 dark:border-white/10 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-            />
-          </div>
-
-          {config.provider === 'openai' && (
             <div>
-              <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">{t.aiEndpoint}</label>
+              <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">{t.aiProvider}</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleProviderChange('gemini')}
+                  disabled={testing}
+                  className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all disabled:opacity-50 ${config.provider === 'gemini'
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
+                    : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 border border-white/40 dark:border-white/10'
+                    }`}
+                >
+                  Gemini
+                </button>
+                <button
+                  onClick={() => handleProviderChange('openai')}
+                  disabled={testing}
+                  className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all disabled:opacity-50 ${config.provider === 'openai'
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
+                    : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 border border-white/40 dark:border-white/10'
+                    }`}
+                >
+                  OpenAI
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">{t.aiApiKey}</label>
+              <div className="relative">
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  value={currentApiKey}
+                  onChange={(e) => setConfig({
+                    ...config,
+                    [config.provider === 'gemini' ? 'geminiApiKey' : 'openaiApiKey']: e.target.value
+                  })}
+                  placeholder="sk-... / AIza..."
+                  className="w-full px-4 py-3 pr-12 rounded-xl bg-white/60 dark:bg-gray-800/60 border-2 border-white/40 dark:border-white/10 text-gray-800 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                />
+                <button
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                  {showApiKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">{t.aiModel}</label>
               <input
                 type="text"
-                value={currentEndpoint}
-                onChange={(e) => setConfig({ ...config, openaiEndpoint: e.target.value })}
-                placeholder={t.aiEndpointPlaceholder}
+                value={currentModel}
+                onChange={(e) => setConfig({
+                  ...config,
+                  [config.provider === 'gemini' ? 'geminiModel' : 'openaiModel']: e.target.value
+                })}
+                placeholder={defaultModels[config.provider]}
                 className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-gray-800/60 border-2 border-white/40 dark:border-white/10 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
               />
             </div>
-          )}
 
-          {testResult && (
-            <div className={`p-3 rounded-xl ${testResult.success ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'} font-bold text-sm`}>
-              {testResult.message}
-            </div>
-          )}
+            {config.provider === 'openai' && (
+              <div>
+                <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">{t.aiEndpoint}</label>
+                <input
+                  type="text"
+                  value={currentEndpoint}
+                  onChange={(e) => setConfig({ ...config, openaiEndpoint: e.target.value })}
+                  placeholder={t.aiEndpointPlaceholder}
+                  className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-gray-800/60 border-2 border-white/40 dark:border-white/10 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                />
+              </div>
+            )}
 
-          <div className="flex gap-3 pt-4">
+            {testResult && (
+              <div className={`p-3 rounded-xl ${testResult.success ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'} font-bold text-sm`}>
+                {testResult.message}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 固定底部按钮 */}
+        <div className="p-6 pt-4 shrink-0">
+          <div className="flex gap-3">
             <button
               onClick={testConnection}
               disabled={testing || !currentApiKey}

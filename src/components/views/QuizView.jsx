@@ -8,7 +8,19 @@ import { X, Volume2, Languages, CloudLightning, Trophy, Zap, Star as StarIcon, H
 import { GlassCard } from '../ui';
 import { speak, shuffleArray } from '../../utils/helpers';
 
-const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, addMistake, updateGoal, user, toggleFavorite, aiConfig, targetLang }) => {
+// 安全解析 JSON，尝试修复常见格式错误
+const safeParseJSON = (jsonStr) => {
+  try {
+    // 尝试修复 "id":"ai6":"word" 这种格式错误
+    let fixed = jsonStr.replace(/"id"\s*:\s*"([^"]+)"\s*:\s*"/g, '"id":"$1","ja":"');
+    return JSON.parse(fixed);
+  } catch (e) {
+    console.error('JSON parse failed:', e);
+    return null;
+  }
+};
+
+const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, addMistake, updateGoal, user, toggleFavorite, aiConfig, targetLang, targetLevel }) => {
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -17,22 +29,82 @@ const QuizView = ({ t, isZh, vocabList, addXp, onFinish, addLog, praisePhrases, 
   const [combo, setCombo] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const scoreRef = useRef(0);
-  const [isAILoading, setIsAILoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // 统一的加载状态
   const [quizMode, setQuizMode] = useState('visual');
+  const hasInitialized = useRef(false); // 防止重复初始化
+
+  // 词汇类别池，用于增加多样性
+  const categoryPool = [
+    { name: 'food & drinks', examples: 'ramen, sushi, coffee, bread, vegetables' },
+    { name: 'emotions & feelings', examples: 'happy, sad, angry, surprised, tired' },
+    { name: 'weather & nature', examples: 'rain, snow, mountain, river, flower' },
+    { name: 'daily actions', examples: 'wake up, sleep, walk, run, read' },
+    { name: 'body parts', examples: 'head, hand, eye, ear, heart' },
+    { name: 'colors & shapes', examples: 'red, blue, circle, square, big' },
+    { name: 'time expressions', examples: 'today, tomorrow, morning, night, week' },
+    { name: 'places & locations', examples: 'station, hospital, park, school, home' },
+    { name: 'family & relationships', examples: 'mother, friend, teacher, neighbor, child' },
+    { name: 'adjectives', examples: 'beautiful, fast, expensive, difficult, delicious' },
+    { name: 'transportation', examples: 'train, bus, bicycle, airplane, walk' },
+    { name: 'shopping & money', examples: 'buy, sell, cheap, expensive, receipt' },
+    { name: 'hobbies & entertainment', examples: 'music, movie, game, travel, sports' },
+    { name: 'work & study', examples: 'meeting, homework, exam, office, company' },
+    { name: 'animals & pets', examples: 'cat, dog, bird, fish, rabbit' },
+  ];
 
   const generateAIQuestions = async () => {
     if (!aiConfig?.enabled || !aiConfig?.apiKey) return null;
 
-    const langName = targetLang === 'ja' ? 'Japanese' : 'Korean';
-    const prompt = `Generate 5 ${langName} vocabulary quiz questions for language learners. 
-For each question, provide:
-- One correct answer with: id mod (unique number), ja (${langName} word), ro (romanization), zh (Chinese meaning), en (English meaning)
-- Three wrong options with the same format
+    const isJapanese = targetLang === 'ja';
+    const langName = isJapanese ? 'Japanese' : 'Korean';
+    
+    // 随机选择2-3个类别，增加多样性
+    const shuffledCategories = shuffleArray([...categoryPool]);
+    const selectedCategories = shuffledCategories.slice(0, 3);
+    const categoryHint = selectedCategories.map(c => `${c.name} (like: ${c.examples})`).join(', ');
+    
+    // 根据用户设置的等级确定难度
+    const getLevelDescription = () => {
+      if (targetLevel === 'mixed') return 'mixed difficulty levels';
+      if (isJapanese) {
+        const levelMap = { N5: 'N5 beginner', N4: 'N4 elementary', N3: 'N3 intermediate', N2: 'N2 upper-intermediate', N1: 'N1 advanced' };
+        return levelMap[targetLevel] || 'N5 beginner';
+      } else {
+        const levelMap = { TOPIK1: 'TOPIK 1 beginner', TOPIK2: 'TOPIK 2 elementary', TOPIK3: 'TOPIK 3 intermediate', TOPIK4: 'TOPIK 4 upper-intermediate', TOPIK5: 'TOPIK 5 advanced', TOPIK6: 'TOPIK 6 proficient' };
+        return levelMap[targetLevel] || 'TOPIK 1 beginner';
+      }
+    };
+    const difficulty = getLevelDescription();
+    
+    // 针对不同语言的避免词汇
+    const avoidWords = isJapanese
+      ? '食べる, 飲む, 見る, 聞く, 行く, 来る, する, ある, いる'
+      : '먹다, 마시다, 보다, 가다, 오다, 하다, 있다, 없다, 좋다';
+    
+    // 随机数种子，让每次请求更独特
+    const randomSeed = Math.floor(Math.random() * 10000);
+    
+    // 字段名根据语言调整
+    const wordField = isJapanese ? 'ja' : 'ko';
+    const romajiField = isJapanese ? 'romaji' : 'romanization';
 
-Return ONLY valid JSON array like this:
-[{"answer":{"id":"ai1","ja":"食べる","ro":"taberu","zh":"吃","en":"eat"},"options":[{"id":"ai1","ja":"食べる","ro":"taberu","zh":"吃","en":"eat"},{"id":"ai2","ja":"飲む","ro":"nomu","zh":"喝","en":"drink"},{"id":"ai3","ja":"見る","ro":"miru","zh":"看","en":"see"},{"id":"ai4","ja":"聞く","ro":"kiku","zh":"听","en":"hear"}]}]
+    const prompt = `Generate 5 unique ${langName} vocabulary quiz questions. Seed: ${randomSeed}
 
-Mix difficulty levels. No markdown, just JSON.`;
+IMPORTANT RULES:
+- Focus on these categories: ${categoryHint}
+- Difficulty: ${difficulty}
+- AVOID common textbook words like: ${avoidWords}
+- Choose INTERESTING and VARIED vocabulary
+- Each question's wrong options should be semantically related but clearly different
+
+For each question provide:
+- One correct answer: {id, ja (${langName} word), ro (${romajiField}), zh (Chinese), en (English)}
+- Three plausible wrong options with same format
+
+Return ONLY valid JSON array:
+[{"answer":{"id":"ai1","ja":"word","ro":"${romajiField}","zh":"中文","en":"english"},"options":[...4 options including answer...]}]
+
+No markdown, just JSON.`;
 
     try {
       let response, data;
@@ -52,7 +124,10 @@ Mix difficulty levels. No markdown, just JSON.`;
         data = await response.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
         const jsonMatch = text.match(/\[[\s\S]*\]/);
-        if (jsonMatch) return JSON.parse(jsonMatch[0]);
+        if (jsonMatch) {
+          const parsed = safeParseJSON(jsonMatch[0]);
+          if (parsed) return parsed;
+        }
       } else {
         let endpoint = aiConfig.endpoint || 'https://api.openai.com/v1';
         if (!endpoint.includes('/chat/completions')) {
@@ -74,7 +149,10 @@ Mix difficulty levels. No markdown, just JSON.`;
         data = await response.json();
         const text = data.choices?.[0]?.message?.content || '';
         const jsonMatch = text.match(/\[[\s\S]*\]/);
-        if (jsonMatch) return JSON.parse(jsonMatch[0]);
+        if (jsonMatch) {
+          const parsed = safeParseJSON(jsonMatch[0]);
+          if (parsed) return parsed;
+        }
       }
     } catch (e) {
       console.error('AI generation failed:', e);
@@ -84,18 +162,28 @@ Mix difficulty levels. No markdown, just JSON.`;
 
 
   useEffect(() => {
+    // 防止 StrictMode 或重复渲染导致多次调用
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+    
     const loadQuestions = async () => {
+      setIsLoading(true);
+      
+      // 尝试 AI 生成
       if (aiConfig?.enabled && aiConfig?.apiKey) {
-        setIsAILoading(true);
         const aiQuestions = await generateAIQuestions();
-        setIsAILoading(false);
         if (aiQuestions && aiQuestions.length > 0) {
           setQuestions(aiQuestions);
+          setIsLoading(false);
           return;
         }
       }
 
-      if (!vocabList || vocabList.length === 0) return;
+      // AI 失败或未启用，使用本地词库
+      if (!vocabList || vocabList.length === 0) {
+        setIsLoading(false);
+        return;
+      }
       const qList = [];
       const pool = shuffleArray(vocabList);
       for (let i = 0; i < 5; i++) {
@@ -107,10 +195,11 @@ Mix difficulty levels. No markdown, just JSON.`;
         qList.push({ answer, options });
       }
       setQuestions(qList);
+      setIsLoading(false);
     };
 
     loadQuestions();
-  }, [vocabList, aiConfig?.enabled]);
+  }, []);
 
   useEffect(() => {
     if (isCompleted) {
@@ -159,10 +248,10 @@ Mix difficulty levels. No markdown, just JSON.`;
     }, 1000);
   };
 
-  if (questions.length === 0 || isAILoading) return (
+  if (isLoading || questions.length === 0) return (
     <div className="flex flex-col items-center justify-center h-full">
       <CloudLightning className="animate-bounce text-blue-300 mb-4" size={48} />
-      {isAILoading && <p className="text-gray-500 dark:text-gray-400 font-bold">{t.aiGenerating}</p>}
+      <p className="text-gray-500 dark:text-gray-400 font-bold">{aiConfig?.enabled ? t.aiGenerating : t.loading}</p>
     </div>
   );
 

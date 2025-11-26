@@ -9,7 +9,7 @@ import { GlassCard } from '../ui';
 import { shuffleArray } from '../../utils/helpers';
 import { ttsService } from '../../services/tts';
 
-const FillBlankGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, aiConfig, targetLang, updateGoal }) => {
+const FillBlankGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, aiConfig, targetLang, updateGoal, targetLevel }) => {
   const [questions, setQuestions] = useState(null); // 改为 null 以区分"未加载"和"空数组"
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -26,28 +26,72 @@ const FillBlankGame = ({ t, isZh, vocabList, addXp, onFinish, addLog, aiConfig, 
       return;
     }
     setIsLoading(true);
-    const selectedVocab = shuffleArray(vocabList).slice(0, 5);
-    const langName = targetLang === 'ja' ? 'Japanese' : 'Korean';
+    
+    const isJapanese = targetLang === 'ja';
+    const langName = isJapanese ? 'Japanese' : 'Korean';
     const userLang = isZh ? 'Chinese' : 'English';
+    
+    // 根据用户设置的等级确定难度
+    const getLevelDescription = () => {
+      if (targetLevel === 'mixed') return 'mixed difficulty (vary from beginner to advanced)';
+      if (isJapanese) {
+        const levelMap = { 
+          N5: 'JLPT N5 (beginner - basic vocabulary, simple grammar)', 
+          N4: 'JLPT N4 (elementary - everyday vocabulary, basic sentences)', 
+          N3: 'JLPT N3 (intermediate - common expressions, compound sentences)', 
+          N2: 'JLPT N2 (upper-intermediate - abstract concepts, complex grammar)', 
+          N1: 'JLPT N1 (advanced - sophisticated vocabulary, nuanced expressions, formal/literary language)' 
+        };
+        return levelMap[targetLevel] || levelMap.N5;
+      } else {
+        const levelMap = { 
+          TOPIK1: 'TOPIK 1 (beginner - basic vocabulary)', 
+          TOPIK2: 'TOPIK 2 (elementary - everyday expressions)', 
+          TOPIK3: 'TOPIK 3 (intermediate - common vocabulary)', 
+          TOPIK4: 'TOPIK 4 (upper-intermediate - abstract topics)', 
+          TOPIK5: 'TOPIK 5 (advanced - complex expressions)', 
+          TOPIK6: 'TOPIK 6 (proficient - sophisticated, academic vocabulary)' 
+        };
+        return levelMap[targetLevel] || levelMap.TOPIK1;
+      }
+    };
+    
+    const levelDesc = getLevelDescription();
+    const randomSeed = Math.floor(Math.random() * 10000);
 
     const exampleTranslation = isZh ? '我每天吃苹果。' : 'I eat apples every day.';
-    const prompt = `Generate 5 fill-in-the-blank sentences for ${langName} learners. Reply in JSON only.
+    const prompt = `Generate 5 fill-in-the-blank sentences for ${langName} learners. Seed: ${randomSeed}
 
-Words to use:
-${selectedVocab.map((v, i) => `${i + 1}. ${v.ja} (${v.ro}) - ${isZh ? v.zh : v.en}`).join('\n')}
+TARGET LEVEL: ${levelDesc}
+
+CRITICAL: Generate vocabulary and sentences appropriate for ${levelDesc}. 
+${targetLevel === 'N1' || targetLevel === 'N2' || targetLevel === 'TOPIK5' || targetLevel === 'TOPIK6' ? 
+`For advanced levels, use:
+- Sophisticated/literary vocabulary (not basic words like eat, drink, go)
+- Complex sentence structures
+- Abstract concepts, idioms, or formal expressions
+- Words that require deeper understanding of the language` : 
+targetLevel === 'N3' || targetLevel === 'N4' || targetLevel === 'TOPIK3' || targetLevel === 'TOPIK4' ?
+`For intermediate levels, use:
+- Common but not overly basic vocabulary
+- Compound sentences with conjunctions
+- Everyday situations with some complexity` :
+`For beginner levels, use:
+- Basic, high-frequency vocabulary
+- Simple sentence structures
+- Concrete, everyday concepts`}
 
 IMPORTANT RULES:
-1. Each sentence MUST have clear context so ONLY the correct answer fits grammatically and semantically
-2. Wrong options must be CLEARLY wrong - they should NOT fit the sentence context at all
-3. Avoid ambiguous sentences where multiple options could be correct
-4. The translation must match the sentence with the correct answer filled in
-5. Use specific context clues (time, place, action) to make the answer unambiguous
-6. Translation MUST be in ${userLang}
+1. Each sentence MUST have clear context so ONLY the correct answer fits
+2. Wrong options must be CLEARLY wrong - they should NOT fit the context
+3. The translation must match the sentence with the correct answer
+4. Translation MUST be in ${userLang}
+5. DO NOT use overly simple words for advanced levels
 
-For each word, create:
-- A ${langName} sentence with specific context where ONLY the target word fits
-- The correct answer (the target word)
-- 2 wrong options (words from DIFFERENT categories that don't fit the context)
+For each question, create:
+- A ${langName} sentence appropriate for ${levelDesc}
+- The correct answer (a word matching the target level)
+- 2 wrong options (words that don't fit the context)
 
 Return ONLY this JSON format:
 [{"sentence":"私は毎日____を食べます。","answer":"りんご","options":["りんご","走る","青い"],"translation":"${exampleTranslation}"}]`;
