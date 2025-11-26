@@ -5,6 +5,7 @@
 
 import { useEffect } from 'react';
 import { LEVELS } from './constants';
+import { ttsService } from '../services/tts';
 
 /**
  * Custom hook to set favicon with an emoji
@@ -32,26 +33,21 @@ export const useFavicon = (emoji) => {
 
 /**
  * Text-to-speech function
+ * Uses TTSService for AI TTS when enabled, falls back to native browser TTS
+ * 
  * @param {string} text - The text to speak
  * @param {string|null} langOverride - Optional language override ('ja' or 'ko')
+ * 
  */
 export const speak = (text, langOverride = null) => {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      const targetLangCode = langOverride || (window.__appTargetLang || 'ja');
-      utterance.lang = targetLangCode === 'ko' ? 'ko-KR' : 'ja-JP';
-      utterance.rate = 0.9;
-
-      // Try to find a voice that matches the language
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(v => v.lang.startsWith(targetLangCode === 'ko' ? 'ko' : 'ja'));
-      if (preferredVoice) utterance.voice = preferredVoice;
-
-      window.speechSynthesis.speak(utterance);
-    }, 10);
-  }
+  const targetLangCode = langOverride || (window.__appTargetLang || 'ja');
+  const lang = targetLangCode === 'ko' ? 'ko' : 'ja';
+  
+  // Use TTSService which handles AI TTS and native fallback
+  ttsService.speak(text, lang).catch((error) => {
+    // Silent catch - TTSService already handles fallback to native TTS
+    console.warn('TTS speak error:', error);
+  });
 };
 
 

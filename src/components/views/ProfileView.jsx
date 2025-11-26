@@ -6,7 +6,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   ChevronRight, Edit3, Zap, Trophy, CheckCircle, Sun, Moon, Wifi, WifiOff,
-  PenLine, History, Github, Languages, Download, Upload, Bot, RefreshCw, Shield, RotateCcw, Globe
+  PenLine, History, Github, Languages, Download, Upload, Bot, RefreshCw, Shield, RotateCcw, Globe, Volume2
 } from 'lucide-react';
 import { GlassCard, Avatar, SectionHeader } from '../ui';
 import { HistoryModal } from '../modals';
@@ -27,7 +27,7 @@ const ProfileView = ({
   t, isZh, toggleLang, user, updateUser, theme, toggleTheme, 
   onlineMode, toggleOnlineMode, logs, targetLang, setTargetLang, 
   claimGoal, onResetRequest, aiConfig, onAISettingsOpen, onPrivacyOpen, 
-  onExportData, onImportData 
+  onExportData, onImportData, ttsConfig, onTTSSettingsOpen
 }) => {
   const { level, progress, nextXp } = getLevelInfo(user.xp);
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
@@ -203,7 +203,13 @@ Format exactly like this (no extra text):
           <div className="flex items-center space-x-4"><div className="p-3 bg-indigo-100/80 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-2xl group-hover:scale-110 transition-transform"><Globe size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.switchLang}</span></div><span className="text-sm font-bold text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-black/20 px-3 py-1 rounded-xl shadow-sm">{isZh ? '中文' : 'EN'}</span>
         </button>
         <button onClick={onAISettingsOpen} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
-          <div className="flex items-center space-x-4"><div className="p-3 bg-purple-100/80 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-2xl group-hover:scale-110 transition-transform"><Bot size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.aiMode}</span></div><span className={`text-sm font-bold px-3 py-1 rounded-xl shadow-sm whitespace-nowrap ${aiConfig?.enabled && aiConfig?.apiKey ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500 dark:bg-black/20 dark:text-gray-400'}`}>{aiConfig?.enabled && aiConfig?.apiKey ? t.aiEnabled : t.aiDisabled}</span>
+          <div className="flex items-center space-x-4"><div className="p-3 bg-purple-100/80 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-2xl group-hover:scale-110 transition-transform"><Bot size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.aiMode}</span></div><span className={`text-sm font-bold px-3 py-1 rounded-xl shadow-sm whitespace-nowrap capitalize ${aiConfig?.enabled && aiConfig?.apiKey ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500 dark:bg-black/20 dark:text-gray-400'}`}>{aiConfig?.enabled && aiConfig?.apiKey ? (aiConfig.provider === 'gemini' ? 'Gemini' : 'OpenAI') : t.aiDisabled}</span>
+        </button>
+        <button onClick={onTTSSettingsOpen} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
+          <div className="flex items-center space-x-4"><div className="p-3 bg-cyan-100/80 dark:bg-cyan-900/50 text-cyan-600 dark:text-cyan-400 rounded-2xl group-hover:scale-110 transition-transform"><Volume2 size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.ttsSettings}</span></div><span className={`text-sm font-bold px-3 py-1 rounded-xl shadow-sm whitespace-nowrap capitalize ${ttsConfig?.enabled && ttsConfig?.provider !== 'native' ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500 dark:bg-black/20 dark:text-gray-400'}`}>{ttsConfig?.enabled && ttsConfig?.provider === 'openai' ? 'OpenAI' : ttsConfig?.enabled && ttsConfig?.provider === 'minimax' ? 'MiniMax' : t.ttsNative}</span>
+        </button>
+        <button onClick={onPrivacyOpen} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
+          <div className="flex items-center space-x-4"><div className="p-3 bg-green-100/80 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-2xl group-hover:scale-110 transition-transform"><Shield size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.privacyPolicy}</span></div><ChevronRight size={20} className="text-gray-400" />
         </button>
         <button onClick={onExportData} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
           <div className="flex items-center space-x-4"><div className="p-3 bg-blue-100/80 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform"><Upload size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.exportData}</span></div><ChevronRight size={20} className="text-gray-400" />
@@ -212,9 +218,6 @@ Format exactly like this (no extra text):
           <div className="flex items-center space-x-4"><div className="p-3 bg-violet-100/80 dark:bg-violet-900/50 text-violet-600 dark:text-violet-400 rounded-2xl group-hover:scale-110 transition-transform"><Download size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.importData}</span></div><ChevronRight size={20} className="text-gray-400" />
           <input type="file" accept=".zip" onChange={onImportData} className="hidden" />
         </label>
-        <button onClick={onPrivacyOpen} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
-          <div className="flex items-center space-x-4"><div className="p-3 bg-green-100/80 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-2xl group-hover:scale-110 transition-transform"><Shield size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.privacyPolicy}</span></div><ChevronRight size={20} className="text-gray-400" />
-        </button>
         <button onClick={onResetRequest} className="w-full flex items-center justify-between p-5 bg-white/50 dark:bg-gray-800/40 rounded-3xl hover:bg-white/70 dark:hover:bg-gray-700/60 transition-all shadow-sm hover:shadow-md border border-white/40 dark:border-white/5 backdrop-blur-md group active:scale-[0.98]">
           <div className="flex items-center space-x-4"><div className="p-3 bg-red-100/80 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-2xl group-hover:scale-110 group-hover:-rotate-180 transition-all duration-500"><RotateCcw size={22} /></div><span className="font-bold text-gray-700 dark:text-gray-200 text-lg">{t.resetData}</span></div><ChevronRight size={20} className="text-gray-400" />
         </button>

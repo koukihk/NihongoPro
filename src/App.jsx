@@ -23,7 +23,8 @@ import {
   AISettingsModal,
   PrivacyModal,
   KanaCanvasModal,
-  UserGuideModal
+  UserGuideModal,
+  TTSSettingsModal
 } from './components/modals';
 
 // Import View components
@@ -65,9 +66,14 @@ export default function App() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [showAISettings, setShowAISettings] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTTSSettings, setShowTTSSettings] = useState(false);
   const [aiConfig, setAIConfig] = useState(() => {
     const saved = localStorage.getItem('kawaii_ai_config');
     return saved ? JSON.parse(saved) : { enabled: false, provider: 'gemini', apiKey: '', model: '', endpoint: '' };
+  });
+  const [ttsConfig, setTTSConfig] = useState(() => {
+    const saved = localStorage.getItem('kawaii_tts_config');
+    return saved ? JSON.parse(saved) : { enabled: false, provider: 'native' };
   });
 
   const t = TRANSLATIONS[lang];
@@ -181,7 +187,9 @@ export default function App() {
         showToast(`${t.toastData} ${t.modeOnline}`);
       }, 1500);
     } else {
+      // 切换到离线模式时，自动关闭 AI 助手和在线语音
       if (aiConfig.enabled) saveAIConfig({ ...aiConfig, enabled: false });
+      if (ttsConfig.enabled) saveTTSConfig({ ...ttsConfig, enabled: false, provider: 'native' });
       setOnlineMode(false);
       localStorage.setItem('kawaii_online_mode', 'false');
       showToast(`${t.toastData} ${t.modeOffline}`);
@@ -195,6 +203,16 @@ export default function App() {
     setAIConfig(config);
     localStorage.setItem('kawaii_ai_config', JSON.stringify(config));
     if (config.enabled && config.apiKey) showToast(`${t.aiMode}: ${t.aiEnabled}`);
+  };
+  const saveTTSConfig = (config) => {
+    // 开启在线语音时，如果当前是离线模式，自动切换到在线模式
+    if (config.enabled && config.provider !== 'native' && !onlineMode) {
+      setIsLoadingData(true);
+      setTimeout(() => { setIsLoadingData(false); setOnlineMode(true); localStorage.setItem('kawaii_online_mode', 'true'); }, 500);
+    }
+    setTTSConfig(config);
+    localStorage.setItem('kawaii_tts_config', JSON.stringify(config));
+    if (config.enabled && config.provider !== 'native') showToast(`${t.ttsSettings}: ${t.ttsEnabled}`);
   };
   const addLog = (type, content, score = null) => {
     const newLog = { type, content, score, date: new Date().toISOString() };
@@ -268,6 +286,7 @@ export default function App() {
       {showResetModal && <ConfirmModal title={t.resetData} description={t.resetConfirm} confirmLabel={t.resetData} cancelLabel={t.cancel} onCancel={() => setShowResetModal(false)} onConfirm={() => { resetData(); setShowResetModal(false); }} />}
       {showAISettings && <AISettingsModal t={t} aiConfig={aiConfig} onSave={saveAIConfig} onClose={() => setShowAISettings(false)} onlineMode={onlineMode} />}
       {showPrivacy && <PrivacyModal t={t} onClose={() => setShowPrivacy(false)} />}
+      {showTTSSettings && <TTSSettingsModal t={t} ttsConfig={ttsConfig} onSave={saveTTSConfig} onClose={() => setShowTTSSettings(false)} onlineMode={onlineMode} lang={lang} />}
 
 
       {/* Background gradients */}
@@ -340,7 +359,7 @@ export default function App() {
                 )}
               </div>
             )}
-            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { const newLang = lang === 'zh' ? 'en' : 'zh'; setLang(newLang); localStorage.setItem('kawaii_lang', newLang); }} user={user} updateUser={saveUser} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} claimGoal={claimGoalReward} onResetRequest={() => setShowResetModal(true)} aiConfig={aiConfig} onAISettingsOpen={() => setShowAISettings(true)} onPrivacyOpen={() => setShowPrivacy(true)} onExportData={exportData} onImportData={importData} />}
+            {activeTab === 'profile' && <ProfileView t={t} isZh={isZh} toggleLang={() => { const newLang = lang === 'zh' ? 'en' : 'zh'; setLang(newLang); localStorage.setItem('kawaii_lang', newLang); }} user={user} updateUser={saveUser} theme={theme} toggleTheme={toggleTheme} onlineMode={onlineMode} toggleOnlineMode={toggleOnlineMode} logs={logs} targetLang={targetLang} setTargetLang={setTargetLang} claimGoal={claimGoalReward} onResetRequest={() => setShowResetModal(true)} aiConfig={aiConfig} onAISettingsOpen={() => setShowAISettings(true)} onPrivacyOpen={() => setShowPrivacy(true)} onExportData={exportData} onImportData={importData} ttsConfig={ttsConfig} onTTSSettingsOpen={() => setShowTTSSettings(true)} />}
           </div>
         )}
 

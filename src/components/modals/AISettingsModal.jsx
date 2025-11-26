@@ -33,13 +33,8 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
   const currentModel = config.provider === 'gemini' ? config.geminiModel : config.openaiModel;
   const currentEndpoint = config.openaiEndpoint;
 
-  const testConnection = async () => {
-    if (!currentApiKey) {
-      setTestResult({ success: false, message: t.aiTestFail });
-      return;
-    }
-    setTesting(true);
-    setTestResult(null);
+  // 执行 API 连接测试，返回是否成功
+  const doTestConnection = async () => {
     try {
       let response;
       if (config.provider === 'gemini') {
@@ -56,7 +51,6 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
         );
       } else {
         let endpoint = currentEndpoint || 'https://api.openai.com/v1';
-        // 如果端点不包含 chat/completions，则添加
         if (!endpoint.includes('/chat/completions')) {
           endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
         }
@@ -74,14 +68,21 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
           })
         });
       }
-      if (response.ok) {
-        setTestResult({ success: true, message: t.aiTestSuccess });
-      } else {
-        setTestResult({ success: false, message: t.aiTestFail });
-      }
-    } catch (e) {
-      setTestResult({ success: false, message: t.aiTestFail });
+      return response.ok;
+    } catch {
+      return false;
     }
+  };
+
+  const testConnection = async () => {
+    if (!currentApiKey) {
+      setTestResult({ success: false, message: t.aiTestFail });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    const success = await doTestConnection();
+    setTestResult({ success, message: success ? t.aiTestSuccess : t.aiTestFail });
     setTesting(false);
   };
 
@@ -103,24 +104,62 @@ const AISettingsModal = ({ t, aiConfig, onSave, onClose, onlineMode }) => {
     onClose();
   };
 
-  const handleToggleEnabled = () => {
+  const handleToggleEnabled = async () => {
     const newEnabled = !config.enabled;
-    // 更新本地状态
-    setConfig({ ...config, enabled: newEnabled });
-    // 同时保存到外部
-    const finalConfig = {
-      enabled: newEnabled && currentApiKey ? true : false,
-      provider: config.provider,
-      apiKey: currentApiKey,
-      model: currentModel || defaultModels[config.provider],
-      endpoint: currentEndpoint,
-      geminiApiKey: config.geminiApiKey,
-      geminiModel: config.geminiModel,
-      openaiApiKey: config.openaiApiKey,
-      openaiModel: config.openaiModel,
-      openaiEndpoint: config.openaiEndpoint
-    };
-    onSave(finalConfig);
+    
+    if (newEnabled && currentApiKey) {
+      // 开启时自动验证
+      setTesting(true);
+      setTestResult(null);
+      
+      const success = await doTestConnection();
+      
+      if (success) {
+        setConfig({ ...config, enabled: true });
+        setTestResult({ success: true, message: t.aiTestSuccess });
+        // 验证成功后保存
+        const finalConfig = {
+          enabled: true,
+          provider: config.provider,
+          apiKey: currentApiKey,
+          model: currentModel || defaultModels[config.provider],
+          endpoint: currentEndpoint,
+          geminiApiKey: config.geminiApiKey,
+          geminiModel: config.geminiModel,
+          openaiApiKey: config.openaiApiKey,
+          openaiModel: config.openaiModel,
+          openaiEndpoint: config.openaiEndpoint
+        };
+        onSave(finalConfig);
+      } else {
+        // 验证失败，回退
+        setConfig({ ...config, enabled: false });
+        setTestResult({ success: false, message: t.aiTestFail });
+      }
+      
+      setTesting(false);
+    } else if (newEnabled && !currentApiKey) {
+      // 没有 API Key，只更新本地状态
+      setConfig({ ...config, enabled: newEnabled });
+      setTestResult(null);
+    } else {
+      // 关闭时直接保存
+      setConfig({ ...config, enabled: false });
+      setTestResult(null);
+      const finalConfig = {
+        enabled: false,
+        provider: config.provider,
+        apiKey: currentApiKey,
+        model: currentModel || defaultModels[config.provider],
+        endpoint: currentEndpoint,
+        geminiApiKey: config.geminiApiKey,
+        geminiModel: config.geminiModel,
+        openaiApiKey: config.openaiApiKey,
+        openaiModel: config.openaiModel,
+        openaiEndpoint: config.openaiEndpoint
+      };
+      onSave(finalConfig);
+    }
   };
 
   return (
